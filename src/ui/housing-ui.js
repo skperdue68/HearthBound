@@ -653,6 +653,7 @@ export function tourDetailPayload(tour,stops,canEdit=false,navigation=null,featu
   if(tour.automatic_owner)e.addFields({name:'Automatic owner tour',value:'Houses update within a minute as registrations change. This route is managed automatically.'});
   if(stops.length)e.addFields({name:'Route',value:tourRouteSummary(stops)});
   let specs=tourDetailButtonSpecs(canEdit).map(spec=>({...spec,customId:spec.customId==='hu:tour:start'?`hu:tour:start:${tour.id}${navigation?`:${navigation.stateId}:${navigation.index}`:featuredSource?`:featured:${featuredSource}`:''}`:spec.customId==='hu:tour:manage'?`hu:tour:manage:${tour.id}`:spec.customId==='hu:tour:add'?`hu:tour:add:${tour.id}`:featuredSource&&spec.customId==='hu:tours'?(featuredSource==='admin'?'hu:admin:featured':featuredSource==='home'?'hu:featured':'hu:tours:featured'):spec.customId,label:featuredSource&&spec.customId==='hu:tours'?'Back to Featured':spec.label}));
+  specs.unshift({customId:`hu:tour:favorite:${tour.id}:${tour.is_favorite?'0':'1'}`,label:tour.is_favorite?'Unfavorite tour':'Favorite tour',emoji:tour.is_favorite?'❤️':'🤍',style:'secondary'});
   specs.splice(1,0,{customId:`hu:pass:tour:share:${tour.id}`,label:'Share Tour Pass',style:'success'});
   specs.splice(2,0,{customId:`hu:report:tourid:${tour.id}`,label:'Report a Problem',style:'secondary'});
   if(navigation){

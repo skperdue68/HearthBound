@@ -15,7 +15,7 @@ export class MyAddressBookService{
     const id=String(userId),gid=String(guildId||''),server=requireEsoServer(esoServer);
     const [houses,tours,pendingHouses,pendingAccess,recent,personal,savedSearches]=await Promise.all([
       one(this.db,"SELECT COUNT(*) c FROM saved_houses WHERE eso_server=? AND (owner_user_id=? OR created_by=?) AND status='active'",[server,id,id]),
-      one(this.db,'SELECT COUNT(*) c FROM tours WHERE eso_server=? AND creator_id=?',[server,id]),
+      one(this.db,"SELECT COUNT(*) c FROM tours t WHERE eso_server=? AND (creator_id=? OR EXISTS(SELECT 1 FROM tour_favorites f WHERE f.tour_id=t.id AND f.discord_user_id=?)) AND (visibility='global' OR (visibility='public' AND guild_id=?) OR (visibility='private' AND creator_id=?))",[server,id,id,gid,id]),
       one(this.db,"SELECT COUNT(*) c FROM saved_houses WHERE eso_server=? AND created_by=? AND status='pending'",[server,id]),
       one(this.db,"SELECT COUNT(*) c FROM global_moderator_requests WHERE eso_server=? AND discord_user_id=? AND status='pending'",[server,id]),
       one(this.db,`SELECT COUNT(*) c FROM recent_house_views rv JOIN saved_houses s ON s.id=rv.saved_house_id

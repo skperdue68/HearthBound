@@ -1,5 +1,6 @@
 import {ChannelType,PermissionFlagsBits as P} from 'discord.js';
 import {validateTourDestination,parseTourDestination} from '../ui/tour-share-destination.js';
+import {tourPassWithCover} from '../ui/tour-pass-cover.js';
 import {houseShareCardPayload,tourShareCardPayload} from '../ui/share-pass-ui.js';
 
 const types=new Set([ChannelType.GuildText,ChannelType.GuildAnnouncement,ChannelType.GuildForum,ChannelType.GuildMedia,ChannelType.GuildVoice,ChannelType.GuildStageVoice]);
@@ -41,7 +42,7 @@ export class DiscordWorkspace {
   return {parents,parent:{id:parent.id,name:parent.name},threads:threads.sort((a,b)=>a.name.localeCompare(b.name)),canPost,warning};
  }
  async target(c,channelId){const actors=await this.actors(c),channel=await actors.guild.channels.fetch(parseTourDestination(channelId,c.guildId),{force:true});await validateTourDestination(channel,actors.i,actors);return {channel,actors};}
- async post(c,{channelId,eventKey,kind,record,stops,passes}){
+ async post(c,{channelId,eventKey,kind,record,stops,passes,tourCovers}){
   if(!eventKey||String(eventKey).length>200)throw new Error('Posting form expired. Reopen the share screen.');
   const key=`${c.userId}:${c.guildId}:${eventKey}`;
   for(const [k,value] of this.pending)if(Date.now()-value.time>1800000)this.pending.delete(k);
@@ -49,7 +50,7 @@ export class DiscordWorkspace {
   const entry={time:Date.now()};this.pending.set(key,entry);
   const {channel,actors}=await this.target(c,channelId),tour=kind==='tour';
   const issued=await passes[tour?'createTourPass':'createHousePass']({[tour?'tourId':'savedHouseId']:record.id,createdBy:c.userId,originGuildId:c.guildId,esoServer:c.esoServer,channelId:channel.id,names:{createdByDisplayName:actors.user.displayName,originGuildName:actors.guild.name,channelName:channel.name}});
-  let message;try{const options={token:issued.token,sharerName:actors.user.displayName||c.userId,stopCount:stops?.length||0};message=await channel.send({...(tour?tourShareCardPayload(record,options):houseShareCardPayload(record,options)),allowedMentions:{parse:[]}});}catch(error){await passes[tour?'revokeTourPass':'revokeHousePass'](issued.pass.id,{actorId:c.userId,reason:'Discord posting failed'}).catch(()=>{});throw error;}
+  let message;try{const options={token:issued.token,sharerName:actors.user.displayName||c.userId,stopCount:stops?.length||0};const payload=tour?await tourPassWithCover(tourCovers,c,channel,actors.bot,record,tourShareCardPayload(record,options)):houseShareCardPayload(record,options);message=await channel.send({...payload,allowedMentions:{parse:[]}});}catch(error){await passes[tour?'revokeTourPass':'revokeHousePass'](issued.pass.id,{actorId:c.userId,reason:'Discord posting failed'}).catch(()=>{});throw error;}
   try{await passes[tour?'markTourPassPosted':'markHousePassPosted'](issued.pass.id,{guildId:c.guildId,channelId:channel.id,messageId:message.id,channelName:channel.name});}catch{return {posted:true,warning:'Posted, but message details could not be saved. Do not repost; the pass can still be revoked.'};}
   return {posted:true,url:`https://discord.com/channels/${c.guildId}/${channel.id}/${message.id}`};
  }

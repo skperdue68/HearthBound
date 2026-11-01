@@ -123,7 +123,7 @@ export class SharePassService{
     return one(this.db,'SELECT * FROM tour_share_passes WHERE id=?',[Number(id)]);
   }
 
-  async resolveTourPass(token,{userId,guildId,esoServer}){
+  async resolveTourPass(token,{userId,guildId,esoServer,recordUsage=true}){
     this.#consumeAccess(userId);
     const hash=this.tokens.hash(token),pass=await one(this.db,'SELECT * FROM tour_share_passes WHERE token_hash=?',[hash]);
     if(!pass)throw new Error('This share card is no longer connected to an active pass.');
@@ -137,8 +137,10 @@ export class SharePassService{
     const stops=await this.db.query(`SELECT ts.*,sh.destination_id,sh.eso_server,sh.scope,sh.eso_owner,sh.house_id,sh.display_name,h.name house_name
       FROM tour_stops ts JOIN saved_houses sh ON sh.id=ts.saved_house_id JOIN houses h ON h.house_id=sh.house_id
       WHERE ts.tour_id=? ORDER BY ts.position`,[pass.tour_id]);
+    if(recordUsage){
     await this.db.query('UPDATE tour_share_passes SET usage_count=usage_count+1,last_used_at=CURRENT_TIMESTAMP WHERE id=?',[pass.id]);
     await this.#tourAudit({guildId,actorId:userId,action:'tour_pass_used',entityId:pass.id,details:{tourId:pass.tour_id}});
+    }
     return {pass:await one(this.db,'SELECT * FROM tour_share_passes WHERE id=?',[pass.id]),tour:access.record,stops,access,readiness};
   }
 

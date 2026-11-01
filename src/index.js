@@ -1,3 +1,4 @@
+import {OwnerTourService} from './services/owner-tour-service.js';
 import {DiscordWorkspace} from './web/discord-workspace.js';
 import {errorReference,GENERIC_ERROR_MESSAGE,publicErrorMessage} from './utils/public-error.js';
 import {UsageActivityService} from './services/usage-activity-service.js';
@@ -33,7 +34,7 @@ await new WebWorkspaceService(db).tourCovers.cleanupOrphans().catch(error=>conso
 await new WebWorkspaceService(db).images.cleanupOrphans().catch(error=>console.warn('HearthBound screenshot cleanup:',error.message));
 const handlers=createHandlers(db);
 const client=new Client({intents:[GatewayIntentBits.Guilds]});
-const worker=new EngagementWorker({featured:new FeaturedContentService(db),intervalMs:60_000});
+const worker=new EngagementWorker({ownerTours:new OwnerTourService(new WebWorkspaceService(db)),featured:new FeaturedContentService(db),intervalMs:60_000});
 const webConfig=webAdminConfig();
 const webAdmin=webConfig.enabled?new WebAdminService(db):null;
 let webServer=null;

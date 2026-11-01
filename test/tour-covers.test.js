@@ -1,3 +1,4 @@
+import './automatic-owner-tours.test.js';
 import test from 'node:test';import assert from 'node:assert/strict';import sharp from 'sharp';import {mkdtemp,rm,readdir} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {fixture} from './workspace-fixture.js';import {closeDatabase,migrate,one} from '../src/db/database.js';import {TourCoverService} from '../src/services/tour-cover-service.js';
 import {tourCoverSchema} from '../src/db/tour-cover-schema.js';

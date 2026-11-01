@@ -939,7 +939,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:elevated:kind')return openAccessRequest(i,i.values?.[0]);
     if(id.startsWith('hu:tour:favorite:')){const [, , ,tourId,value]=id.split(':');await tourFavorites.set({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||[])]},tourId,value==='1');if(i.message?.components?.length){const components=mapMessageControls(i.message.components,node=>node.custom_id?.startsWith('hu:tour:favorite:')?{...node,custom_id:`hu:tour:favorite:${tourId}:${value==='1'?'0':'1'}`,label:value==='1'?'Unfavorite tour':'Favorite tour',emoji:{name:value==='1'?'❤️':'🤍'}}:node);return i.update({components});}return tourDetail(i,Number(tourId));}
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(isDiscordAdminInteraction(id))return i.reply({content:webOnlyAdminNotice(),flags:MessageFlags.Ephemeral});
     if(id.startsWith('tour:'))return handleTourRuntimeButton(i,id);
     if(id==='hu:tours:featured'||id==='hu:featured'){
@@ -1717,7 +1717,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:help:elevated'||id==='hu:help:moderators')return openAccessRequest(i);
     if(id==='hu:elevated:kind')return openAccessRequest(i,i.values?.[0]);
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(isDiscordAdminInteraction(id))return i.reply({content:webOnlyAdminNotice(),flags:MessageFlags.Ephemeral});
     if(id.startsWith('hu:savedsearch:list:')){
       const payload=await savedSearchDetail(i,Number(i.values?.[0]));
@@ -1969,7 +1969,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id.startsWith('hu:catalog:')||id.startsWith('hu:modal:catalog:')||(id==='hu:admin:tool'&&['catalog','catalog_edit'].includes(i.values?.[0])))return handleCatalog(i);
     if(isRetiredEventInteraction(id))return id.startsWith('hu:modal:')?i.reply({...retiredEventPayload(),flags:MessageFlags.Ephemeral}):i.update(retiredEventPayload());
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(id.startsWith('hu:modal:savedsearch:')){
       const parts=id.split(':'),mode=parts[3],target=parts[4],name=text(i.fields.getTextInputValue('name'));
       try{

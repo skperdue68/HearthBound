@@ -542,43 +542,6 @@ test('administration known-total lists provide page jumps and clamp stale page l
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
 
-test('OAuth callback requires the cookie from the browser that started sign-in', async () => {
-  const { server, base } = await running();
-  try {
-    const login = await fetch(`${base}/auth/discord`, { redirect: 'manual' });
-    const state = new URL(login.headers.get('location')).searchParams.get('state');
-    const bindingCookie = login.headers.get('set-cookie');
-    assert.match(bindingCookie, /^hearthbound_oauth=[A-Za-z0-9_-]{32,};/);
-    assert.match(bindingCookie, /HttpOnly/);
-    assert.match(bindingCookie, /SameSite=Lax/);
-    assert.match(bindingCookie, /Path=\/auth/);
-
-    // A state replayed from a browser that never started the sign-in is refused and no session is issued.
-    const replay = await fetch(`${base}/auth/callback?code=test&state=${state}`, { redirect: 'manual' });
-    assert.equal(replay.status, 400);
-    assert.equal(replay.headers.get('set-cookie'), null);
-
-    // The refused attempt spends the state, so the genuine browser must start over.
-    const spent = await fetch(`${base}/auth/callback?code=test&state=${state}`, { headers: { cookie: bindingCookie.split(';')[0] }, redirect: 'manual' });
-    assert.equal(spent.status, 400);
-
-    // A different browser's binding cookie does not unlock someone else's state.
-    const victim = await fetch(`${base}/auth/discord`, { redirect: 'manual' });
-    const attacker = await fetch(`${base}/auth/discord`, { redirect: 'manual' });
-    const victimState = new URL(victim.headers.get('location')).searchParams.get('state');
-    const crossed = await fetch(`${base}/auth/callback?code=test&state=${victimState}`, { headers: { cookie: attacker.headers.get('set-cookie').split(';')[0] }, redirect: 'manual' });
-    assert.equal(crossed.status, 400);
-  } finally { await new Promise(resolve => server.close(resolve)); }
-});
-
-test('OAuth binding cookie is Secure when the redirect URI is HTTPS', async () => {
-  const { server, base } = await running({ config: { oauth: { clientId: 'client', clientSecret: 'secret', redirectUri: 'https://admin.example.test/auth/callback' } } });
-  try {
-    const login = await fetch(`${base}/auth/discord`, { redirect: 'manual' });
-    assert.match(login.headers.get('set-cookie'), /Secure/);
-  } finally { await new Promise(resolve => server.close(resolve)); }
-});
-
 test('pages carry security headers, and HSTS only over HTTPS', async () => {
   const plain = await running();
   try {
@@ -642,7 +605,6 @@ test('unexpected errors show a reference instead of internal details', async () 
     assert.ok(logged.some(line => line.includes(reference) && line.includes('web error')), 'the real error is logged with the same reference');
   } finally { console.error = original; await new Promise(resolve => server.close(resolve)); }
 });
-
 
 test('OAuth callback requires the cookie from the browser that started sign-in', async () => {
   const { server, base } = await running();

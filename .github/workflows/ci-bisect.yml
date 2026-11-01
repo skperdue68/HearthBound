@@ -1,0 +1,20 @@
+name: ci-bisect
+on:
+  push:
+    branches: ['ci-bisect/**']
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run tests and report failures
+        run: |
+          node --test --test-concurrency=4 "test/*.test.js" > tests.out 2>&1 || true
+          F=$(grep -B3 -A16 -E "^\s*not ok" tests.out | head -c 9000 | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::error title=Failing tests::${F:-none}"
+          grep -E "^# (pass|fail)" tests.out

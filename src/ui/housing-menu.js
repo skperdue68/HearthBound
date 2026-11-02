@@ -1,3 +1,4 @@
+import {TourFavoriteService} from '../services/tour-favorite-service.js';
 import {requestableAccessKinds} from '../services/access-request-options.js';
 import {moderatorAccessPayload,serverRequestModal} from './moderator-access-ui.js';
 import {TourCoverService} from '../services/tour-cover-service.js';
@@ -155,6 +156,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
   const isGlobalTourAdmin=i=>globalMods.isGlobalModeratorCached(i.user.id,guilds.getEsoServer(i.guildId));
   const handleCatalog=createCatalogMenu(new HouseCatalogService(db));
   const contentPolicy=new ContentPolicyService(db);
+  const tourFavorites=new TourFavoriteService(db,contentPolicy);
   const availableRequests=async i=>requestableAccessKinds(contentPolicy,await contentPolicy.context({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||i.member?.roles||[])].map(String)}));
   const supportPayload=async(i,options={})=>{const access=i.guildId?await guilds.ensureModeratorAccess(i):null;return helpPayload({...options,requestableKinds:await availableRequests(i),canSetUpServer:!!(access?.setupRequired&&access.canClaimFirstAdmin),canReviewGlobal:globalMods.isApprover(i.user.id)});};
   const openAccessRequest=async(i,kind)=>{const kinds=await availableRequests(i);if(kind&&!kinds.includes(kind))return i.reply({content:'That elevated access request is not available.',flags:MessageFlags.Ephemeral});const selected=kind||(kinds.length===1?kinds[0]:null);return selected?i.showModal(selected==='server'?serverRequestModal():globalModeratorRequestModal()):i.update(moderatorAccessPayload(kinds));};
@@ -523,7 +525,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     return createPicker(i,{kind:'tour-add-house',rows,extra:{title:`Add House — ${t.name}`,description:'Choose a house to add it immediately. You can add optional tour-specific notes right afterward. Houses already on this tour are omitted.',tourId:t.id},backId:`hu:tour:manage:${t.id}`});
   }
 
-  async function tourById(i,id,{forManagement=false}={}){const access=await accessContexts.forTour({userId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),tourId:id});if(!access.environmentMatch)throw new Error(access.message);if(!access.canView&&!(forManagement&&isGlobalTourAdmin(i)&&access.record?.visibility==='public'))return null;const t=access.record;return {...t,scope:t.visibility==='private'?'personal':t.visibility==='public'?'server':'global'};}
+  async function tourById(i,id,{forManagement=false}={}){const access=await accessContexts.forTour({userId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),tourId:id});if(!access.environmentMatch)throw new Error(access.message);if(!access.canView&&!(forManagement&&isGlobalTourAdmin(i)&&access.record?.visibility==='public'))return null;const t=access.record;return {...t,is_favorite:await tourFavorites.get(i.user.id,t.id),scope:t.visibility==='private'?'personal':t.visibility==='public'?'server':'global'};}
   async function tourDetail(i,id,mode='update'){
     const t=await tourById(i,id); if(!t)return respond(i,{content:'Tour not found.',embeds:[],components:[]},mode);
     return respond(i,await tourCover(i,t,tourDetailPayload(t,await tours.getStops(t.id),canManageTour(i,t))),mode);
@@ -935,8 +937,9 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(isRetiredEventInteraction(id))return id.startsWith('hu:modal:')?i.reply({...retiredEventPayload(),flags:MessageFlags.Ephemeral}):i.update(retiredEventPayload());
     if(id==='hu:help:elevated'||id==='hu:help:moderators')return openAccessRequest(i);
     if(id==='hu:elevated:kind')return openAccessRequest(i,i.values?.[0]);
+    if(id.startsWith('hu:tour:favorite:')){const [, , ,tourId,value]=id.split(':');await tourFavorites.set({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||[])]},tourId,value==='1');if(i.message?.components?.length){const components=mapMessageControls(i.message.components,node=>node.custom_id?.startsWith('hu:tour:favorite:')?{...node,custom_id:`hu:tour:favorite:${tourId}:${value==='1'?'0':'1'}`,label:value==='1'?'Unfavorite tour':'Favorite tour',emoji:{name:value==='1'?'❤️':'🤍'}}:node);return i.update({components});}return tourDetail(i,Number(tourId));}
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(isDiscordAdminInteraction(id))return i.reply({content:webOnlyAdminNotice(),flags:MessageFlags.Ephemeral});
     if(id.startsWith('tour:'))return handleTourRuntimeButton(i,id);
     if(id==='hu:tours:featured'||id==='hu:featured'){
@@ -1147,9 +1150,9 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
       return i.update(createPicker(i,{kind:'visit',rows,extra:{title:'🏠 My Houses',description:`You have ${rows.length} saved or submitted house${rows.length===1?'':'s'}. Global houses appear first, then Server, then Private.`},backId:'hu:my'}));
     }
     if(id==='hu:my:tours'){
-      const rows=await myAddressBook.tours(i.user.id,guilds.getEsoServer(i.guildId));
-      if(!rows.length)return i.update({...await dashboard(i),content:'You have not created any tours yet.'});
-      return i.update(createPicker(i,{kind:'tour-view',rows,extra:{title:'🗺️ My Tours',description:`You have created ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
+      const created=await myAddressBook.tours(i.user.id,guilds.getEsoServer(i.guildId)),savedTours=await tourFavorites.list({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||[])]});const rows=[...new Map([...created,...savedTours].filter(t=>contentPolicy.canViewTour(t,contextFor(i))).map(t=>[Number(t.id),{...t,scope:t.visibility==='private'?'personal':t.visibility==='public'?'server':'global'}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
+      if(!rows.length)return i.update({...await dashboard(i),content:'You have not created or favorited any tours yet.'});
+      return i.update(createPicker(i,{kind:'tour-view',rows,extra:{title:'🗺️ My Tours',description:`You have created or favorited ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
     }
     if(id==='hu:my:pending')return i.update(myPendingPayload(await myAddressBook.pending(i.user.id,guilds.getEsoServer(i.guildId),i.guildId)));
     if(id==='hu:my:recent'){
@@ -1714,7 +1717,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:help:elevated'||id==='hu:help:moderators')return openAccessRequest(i);
     if(id==='hu:elevated:kind')return openAccessRequest(i,i.values?.[0]);
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(isDiscordAdminInteraction(id))return i.reply({content:webOnlyAdminNotice(),flags:MessageFlags.Ephemeral});
     if(id.startsWith('hu:savedsearch:list:')){
       const payload=await savedSearchDetail(i,Number(i.values?.[0]));
@@ -1966,7 +1969,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id.startsWith('hu:catalog:')||id.startsWith('hu:modal:catalog:')||(id==='hu:admin:tool'&&['catalog','catalog_edit'].includes(i.values?.[0])))return handleCatalog(i);
     if(isRetiredEventInteraction(id))return id.startsWith('hu:modal:')?i.reply({...retiredEventPayload(),flags:MessageFlags.Ephemeral}):i.update(retiredEventPayload());
     if(isServerModeratorAction(id))return handleServerModeratorAction(i,{serverModerators:guilds.serverModerators,guilds});
-    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
+    if(isTourShareDestination(id))return handleTourShareDestination(i,{sharePasses,tours,guilds,tourCovers:coverService,loadHouse:async(i,id)=>(await loadSavedReference(i,id)).record});
     if(id.startsWith('hu:modal:savedsearch:')){
       const parts=id.split(':'),mode=parts[3],target=parts[4],name=text(i.fields.getTextInputValue('name'));
       try{

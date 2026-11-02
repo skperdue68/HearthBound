@@ -1,3 +1,4 @@
+import {orderTours,tourSections} from '../utils/tour-list-order.js';
 import {TourFavoriteService} from '../services/tour-favorite-service.js';
 import {requestableAccessKinds} from '../services/access-request-options.js';
 import {moderatorAccessPayload,serverRequestModal} from './moderator-access-ui.js';
@@ -315,6 +316,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
   function createPicker(i,{kind,rows,title='Choose an option',description='Select the item you want to use.',extra={},backId='hu:home',multiple=false}){
     const administrative=['tour-manage','tour-add-house','tour-stop-edit','tour-stop-reorder','tour-stop-remove'].includes(kind);
     const tourAdminContext=administrative?{guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),globalAdmin:isGlobalTourAdmin(i),serverAdmin:isModerator(i)}:null;
+    if(['tour-view','tour-start','tour-manage'].includes(kind))rows=orderTours(rows);
     const id=token(); states.set(id,{userId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),kind,rows,extra,backId,page:0,multiple,tourAdminContext,created:Date.now()}); return renderPicker(id);
   }
   const navigableHousePicker=s=>s.kind==='visit'||s.kind.startsWith('personal-');
@@ -392,7 +394,8 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     const actions=[...searchActions,...tourActions,...builderActions,...(s.extra.actions||[])];
     const pageText=s.rows.length?`Showing ${start+1}-${start+slice.length} of ${s.rows.length}${pages>1?` • Page ${s.page+1} of ${pages}`:''}.`:'No houses match these filters. Clear filters or go back.';
     const filterText=s.kind==='tour-add-house'&&s.extra.houseFilters?'Filters: '+Object.entries(s.extra.houseFilters).filter(([,value])=>value).map(([key,value])=>`${({query:'House/owner',tags:'Tags',visibility:'Visibility',zone:'Zone',architecture:'Style/classification'})[key]}: ${String(value).slice(0,80)}`).join(' · '):'';
-    const description=[s.extra.description,filterText,pageText].filter(Boolean).join('\n\n');
+    const sections=['tour-view','tour-start','tour-manage'].includes(s.kind)?tourSections(slice).map(g=>`**${g.title}**\n${g.rows.map(t=>`• ${String(t.name).replace(/[*_`~\[\]<>]/g,'').slice(0,90)}`).join('\n')}`).join('\n\n'):'';
+    const description=[s.extra.description,filterText,pageText,sections].filter(Boolean).join('\n\n');
     return pickerPayload({title:s.extra.title||'Choose an option',description,customId:`hu:picker:${id}`,options,page:s.page,pages,backId:s.backId,multiple:s.multiple,actions,paginationArrows:s.kind==='visit'});
   }
   async function withPassState(i,house,passToken){

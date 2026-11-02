@@ -15,7 +15,7 @@ export class MyAddressBookService{
     const id=String(userId),gid=String(guildId||''),server=requireEsoServer(esoServer);
     const [houses,tours,pendingHouses,pendingAccess,recent,personal,savedSearches]=await Promise.all([
       one(this.db,"SELECT COUNT(*) c FROM saved_houses WHERE eso_server=? AND (owner_user_id=? OR created_by=?) AND status='active'",[server,id,id]),
-      one(this.db,"SELECT COUNT(*) c FROM tours t WHERE eso_server=? AND (creator_id=? OR EXISTS(SELECT 1 FROM tour_favorites f WHERE f.tour_id=t.id AND f.discord_user_id=?)) AND (visibility='global' OR (visibility='public' AND guild_id=?) OR (visibility='private' AND creator_id=?))",[server,id,id,gid,id]),
+      one(this.db,"SELECT COUNT(*) c FROM tours t WHERE eso_server=? AND ((creator_id=? AND automatic_owner IS NULL) OR EXISTS(SELECT 1 FROM tour_favorites f WHERE f.tour_id=t.id AND f.discord_user_id=?)) AND (visibility='global' OR (visibility='public' AND guild_id=?) OR (visibility='private' AND creator_id=?))",[server,id,id,gid,id]),
       one(this.db,"SELECT COUNT(*) c FROM saved_houses WHERE eso_server=? AND created_by=? AND status='pending'",[server,id]),
       one(this.db,"SELECT COUNT(*) c FROM global_moderator_requests WHERE eso_server=? AND discord_user_id=? AND status='pending'",[server,id]),
       one(this.db,`SELECT COUNT(*) c FROM recent_house_views rv JOIN saved_houses s ON s.id=rv.saved_house_id
@@ -31,7 +31,7 @@ export class MyAddressBookService{
       WHERE s.eso_server=? AND (s.owner_user_id=? OR s.created_by=?) AND s.status='active'
       ORDER BY CASE s.scope WHEN 'global' THEN 1 WHEN 'public' THEN 2 ELSE 3 END,coalesce(s.display_name,h.name),s.id`,[server,id,id]));
   }
-  tours(userId,esoServer){const server=requireEsoServer(esoServer);return this.db.query("SELECT *,CASE visibility WHEN 'private' THEN 'personal' WHEN 'public' THEN 'server' ELSE 'global' END scope FROM tours WHERE eso_server=? AND creator_id=? ORDER BY name",[server,String(userId)]);}
+  tours(userId,esoServer){const server=requireEsoServer(esoServer);return this.db.query("SELECT *,CASE visibility WHEN 'private' THEN 'personal' WHEN 'public' THEN 'server' ELSE 'global' END scope FROM tours WHERE eso_server=? AND creator_id=? AND automatic_owner IS NULL ORDER BY name",[server,String(userId)]);}
   async pending(userId,esoServer,guildId=null){
     const id=String(userId),server=requireEsoServer(esoServer);
     const houses=[]; // House submissions are visible only in authorized approval queues.
@@ -60,7 +60,7 @@ export class MyAddressBookService{
     const activeTour=activeTourRow?{...activeTourRow,tour_name:activeTourRow.current_tour_name}:null;
     if(activeTour)delete activeTour.current_tour_name;
     const recentHouse=(await this.recent(id,gid,server,1))[0]||null;
-    const editedTour=await one(this.db,"SELECT *,CASE visibility WHEN 'private' THEN 'personal' WHEN 'public' THEN 'server' ELSE 'global' END scope FROM tours WHERE eso_server=? AND creator_id=? ORDER BY updated_at DESC,id DESC LIMIT 1",[server,id]);
+    const editedTour=await one(this.db,"SELECT *,CASE visibility WHEN 'private' THEN 'personal' WHEN 'public' THEN 'server' ELSE 'global' END scope FROM tours WHERE eso_server=? AND creator_id=? AND automatic_owner IS NULL ORDER BY updated_at DESC,id DESC LIMIT 1",[server,id]);
     return {activeTour,recentHouse,editedTour};
   }
   async legacyUnassigned(userId){

@@ -23,6 +23,7 @@ import {welcomePage,guildPickerPage} from './public-pages.js';
 import { createWebRateLimiter, rateLimitConfig } from './rate-limit.js';
 import {HSTS_HEADERS,SECURITY_HEADERS} from './security-headers.js';
 import {errorReference,publicErrorMessage} from '../utils/public-error.js';
+import { createWebRateLimiter, rateLimitConfig } from './rate-limit.js';
 
 const cookieValue = (request, name) => String(request.headers.cookie || '').split(';').map(item => item.trim()).find(item => item.startsWith(`${name}=`))?.slice(name.length + 1) || null;
 const baseSend = (response, status, body, headers = {}) => { response.writeHead(status, { 'content-type': 'text/html; charset=utf-8', 'referrer-policy':'no-referrer', 'cache-control':'private, no-store', ...SECURITY_HEADERS, ...headers }); response.end(body); };
@@ -46,6 +47,8 @@ export function createWebAdminServer({ service, workspace = null, config = {}, r
   // Strict-Transport-Security is only sent when the portal is configured for HTTPS.
   const hsts = String(cfg.oauth?.redirectUri || '').startsWith('https://') ? HSTS_HEADERS : {};
   const send = (response, status, body, headers = {}) => baseSend(response, status, body, { ...hsts, ...headers });
+  // Per-client request limits (see rate-limit.js). Settings come from WEB_RATE_LIMIT_* and WEB_TRUST_PROXY unless supplied in config.
+  const rateLimiter = createWebRateLimiter(config.rateLimits || rateLimitConfig(process.env), config.rateLimitClock);
   const identityResolver = resolveOAuthIdentity || (async tokens => {
     const response = await fetchImpl('https://discord.com/api/users/@me', { headers: { authorization: `Bearer ${tokens.access_token}` } });
     if (!response.ok) throw new Error('Discord identity lookup failed.');

@@ -20,7 +20,7 @@ export class GuestBrowseService{
  async tours(environment,{q='',page=1}={}){
   const args=[requireEsoServer(environment)],where=["t.visibility='global'",'t.eso_server=?'];if(q){where.push('lower(t.name) LIKE ?');args.push('%'+String(q).slice(0,200).toLowerCase()+'%');}
   const from=`FROM tours t WHERE ${where.join(' AND ')}`,total=Number((await one(this.db,`SELECT count(*) n ${from}`,args)).n),window=pageWindow(page,total);
-  const rows=await this.db.query(`SELECT t.id,t.name,t.description,t.eso_server,(SELECT count(*) FROM tour_stops s WHERE s.tour_id=t.id) stops,(SELECT tour_id FROM tour_covers c WHERE c.tour_id=t.id) cover ${from} ORDER BY lower(t.name),t.id LIMIT 25 OFFSET ?`,[...args,window.offset]);return {rows,total,page:window.page};
+  const rows=await this.db.query(`SELECT t.id,t.name,t.description,t.eso_server,t.automatic_owner,(SELECT count(*) FROM tour_stops s WHERE s.tour_id=t.id) stops,(SELECT tour_id FROM tour_covers c WHERE c.tour_id=t.id) cover ${from} ORDER BY CASE WHEN t.automatic_owner IS NULL THEN 0 ELSE 1 END,lower(t.name),t.id LIMIT 25 OFFSET ?`,[...args,window.offset]);return {rows,total,page:window.page};
  }
  async house(id){const h=await this.w.saved.get(Number(id));if(!h||h.scope!=='global'||h.status!=='active'||!normalizeEsoServer(h.eso_server))throw Error('Entry unavailable.');return h;}
  async tour(id){const tour=await this.w.tours.get(Number(id));if(!tour||tour.visibility!=='global'||!normalizeEsoServer(tour.eso_server))throw Error('Entry unavailable.');const stops=[];

@@ -1,3 +1,4 @@
+import {orderTours} from '../utils/tour-list-order.js';
 import { one, withTransaction } from '../db/database.js';
 import { tourAllowsHouseScope } from './saved-house-service.js';
 import { withCatalogHouseName, withCatalogHouseNames } from '../utils/query-results.js';
@@ -68,9 +69,9 @@ export class TourService{
     // Administrative callers must authorize includeOtherServers for this exact environment.
     const visibility=includeOtherServers?"AND (visibility IN ('global','public') OR (visibility='private' AND creator_id=?))":"AND ((visibility='private' AND creator_id=?) OR (visibility='public' AND guild_id=?) OR visibility='global')";
     const rows=await this.db.query(`SELECT * FROM tours WHERE eso_server=? ${visibility} ORDER BY lower(name),name,id`,includeOtherServers?[server,creatorId]:[server,creatorId,guildId]);
-    return rows.map(r=>({...r,scope:legacyScope(r.visibility)}));
+    return orderTours(rows).map(r=>({...r,scope:legacyScope(r.visibility)}));
   }
-  async searchVisible({creatorId,guildId,esoServer,name}){const server=requireEsoServer(esoServer),q=String(name??'').trim().toLowerCase(),rows=await this.db.query(`SELECT * FROM tours WHERE eso_server=? AND ((visibility='private' AND creator_id=?) OR (visibility='public' AND guild_id=?) OR visibility='global') ${q?'AND lower(name) LIKE ?':''} ORDER BY lower(name),name,id`,q?[server,creatorId,guildId,`%${q}%`]:[server,creatorId,guildId]);return rows.map(r=>({...r,scope:legacyScope(r.visibility)}));}
+  async searchVisible({creatorId,guildId,esoServer,name}){const server=requireEsoServer(esoServer),q=String(name??'').trim().toLowerCase(),rows=await this.db.query(`SELECT * FROM tours WHERE eso_server=? AND ((visibility='private' AND creator_id=?) OR (visibility='public' AND guild_id=?) OR visibility='global') ${q?'AND lower(name) LIKE ?':''} ORDER BY lower(name),name,id`,q?[server,creatorId,guildId,`%${q}%`]:[server,creatorId,guildId]);return orderTours(rows).map(r=>({...r,scope:legacyScope(r.visibility)}));}
   async visibleForHouse(savedHouseId,{creatorId,guildId,esoServer}){const server=requireEsoServer(esoServer);return this.db.query(`SELECT DISTINCT t.id,t.name,t.visibility
     FROM tour_stops ts JOIN tours t ON t.id=ts.tour_id
     WHERE ts.saved_house_id=? AND t.eso_server=? AND (t.visibility='global' OR (t.visibility='public' AND t.guild_id=?) OR (t.visibility='private' AND t.creator_id=?))

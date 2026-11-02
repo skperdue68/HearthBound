@@ -10,7 +10,7 @@ export function parseDiscordMemberId(input){
 }
 const guildFor=(record,kind,c)=>(kind==='house'?record.scope:record.visibility)==='global'?c.guildId:(kind==='tour'?record.source_guild_id||record.guild_id:record.guild_id);
 export function canReassignShared(record,kind,c){
- if(!tableFor(kind)||!record||record.eso_server!==c.esoServer)return false;
+ if(!tableFor(kind)||!record||(kind==='tour'&&record.automatic_owner)||record.eso_server!==c.esoServer)return false;
  const visibility=kind==='house'?record.scope:record.visibility;
  if(!['public','global'].includes(visibility))return false;
  return Boolean(c.isOwner||c.isGlobalAdmin||(visibility==='public'&&c.isServerAdmin&&guildFor(record,kind,c)===c.guildId));

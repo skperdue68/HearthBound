@@ -1,3 +1,4 @@
+import './tour-favorites.test.js';
 import './elevated-access-requests.test.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

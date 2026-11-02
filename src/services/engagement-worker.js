@@ -1,11 +1,12 @@
 export class EngagementWorker {
-  constructor({ featured, intervalMs = 60_000, logger = console, setIntervalFn = setInterval, clearIntervalFn = clearInterval } = {}) {
-    this.featured = featured; this.intervalMs = intervalMs; this.logger = logger; this.setIntervalFn = setIntervalFn; this.clearIntervalFn = clearIntervalFn; this.timer = null;
+  constructor({ ownerTours, featured, intervalMs = 60_000, logger = console, setIntervalFn = setInterval, clearIntervalFn = clearInterval } = {}) {
+    this.ownerTours=ownerTours; this.featured = featured; this.intervalMs = intervalMs; this.logger = logger; this.setIntervalFn = setIntervalFn; this.clearIntervalFn = clearIntervalFn; this.timer = null;
   }
 
   async runOnce() {
     if(this.running)return this.running;
     this.running=(async()=>{
+      await this.ownerTours?.runOnce?.().catch(error=>this.logger.error?.('Automatic owner tour synchronization failed:',error));
       await this.featured?.expireDue?.().catch(error => this.logger.error?.('Featured expiry worker failed:', error));
       await this.featured?.rotateDueHousesAll?.().catch(error => this.logger.error?.('Weekly Featured selection failed:', error));
     })();

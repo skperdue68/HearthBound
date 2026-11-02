@@ -1,4 +1,5 @@
 import { ChannelType, PermissionFlagsBits as P } from 'discord.js';
+import {tourPassWithCover} from './tour-pass-cover.js';
 import { buttonRows } from './housing-ui.js';
 import { tourShareChannelPayload, tourShareThreadPayload, tourShareDestinationPayload, tourShareLinkModal, tourShareCardPayload, houseShareCardPayload } from './share-pass-ui.js';
 
@@ -43,7 +44,7 @@ async function fetchDestination(i,id){
 }
 const sortChannels=rows=>rows.sort((a,b)=>(a.parent?.position??a.position??0)-(b.parent?.position??b.position??0)||(a.position??0)-(b.position??0)||String(a.name).localeCompare(String(b.name))||String(a.id).localeCompare(String(b.id)));
 
-export async function handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse}){
+export async function handleTourShareDestination(i,{sharePasses,tours,guilds,loadHouse,tourCovers}){
   const modal=i.customId.startsWith('hu:modal:');
   const kind=modal?(i.customId.includes(':housedestination:')?'house':'tour'):i.customId.split(':')[2];
   const title=kind==='house'?'House Share Pass':'Tour Pass',back=kind==='house'?'hu:home':'hu:tours';
@@ -96,7 +97,7 @@ export async function handleTourShareDestination(i,{sharePasses,tours,guilds,loa
     let message;
     try{
       const options={token:created.token,sharerName:actors.user.displayName||i.user.username,stopCount:stops.length};
-      message=await channel.send(kind==='tour'?tourShareCardPayload(record,options):houseShareCardPayload(record,options));
+      const payload=kind==='tour'?await tourPassWithCover(tourCovers,{userId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),memberRoleIds:[...(actors.user.roles?.cache?.keys?.()||[])]},channel,actors.bot,record,tourShareCardPayload(record,options)):houseShareCardPayload(record,options);message=await channel.send(payload);
     }catch(error){await sharePasses[revoke](created.pass.id,{actorId:i.user.id,reason:'Discord posting failed'}).catch(()=>{});throw error;}
     const components=buttonRows([{customId:back,label:kind==='tour'?'Back to Tours':'Back to HearthBound',style:'secondary'}]);
     try{await sharePasses[mark](created.pass.id,{guildId:i.guildId,channelId:channel.id,messageId:message.id,channelName:channel.name});}

@@ -605,6 +605,7 @@ test('unexpected errors show a reference instead of internal details', async () 
     assert.ok(logged.some(line => line.includes(reference) && line.includes('web error')), 'the real error is logged with the same reference');
   } finally { console.error = original; await new Promise(resolve => server.close(resolve)); }
 });
+
 test('OAuth callback requires the cookie from the browser that started sign-in', async () => {
   const { server, base } = await running();
   try {

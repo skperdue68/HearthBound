@@ -1,3 +1,4 @@
+import {withHouseTours} from './house-tour-memberships.js';
 import {readFile} from 'node:fs/promises';
 import {one} from '../db/database.js';
 import {pageWindow} from '../utils/pagination.js';
@@ -14,8 +15,8 @@ export class GuestBrowseService{
   for(const [column,value] of [['zone',zone],['style',style],['classification',classification]])if(value){where.push(`lower(coalesce(h.${column},''))=?`);args.push(String(value).trim().toLowerCase());}
   if(tag){where.push("lower(coalesce(s.tags,'')) LIKE ? ESCAPE '!'");const token=JSON.stringify(String(tag).trim()).toLowerCase().replace(/[!%_]/g,c=>'!'+c);args.push('%'+token+'%');}
   const from=`FROM saved_houses s JOIN houses h ON h.house_id=s.house_id WHERE ${where.join(' AND ')}`,total=Number((await one(this.db,`SELECT count(*) n ${from}`,args)).n),window=pageWindow(page,total);
-  const rows=withCatalogHouseNames(await this.db.query(`SELECT s.id,s.display_name,s.eso_owner,s.house_id,s.eso_server,s.description,s.tags,h.name catalog_house_name,h.zone,h.classification,h.style,h.population_limit,(SELECT i.id FROM house_images i WHERE i.saved_house_id=s.id ORDER BY i.position,i.id LIMIT 1) cover_image_id ${from} ORDER BY ${sort==='newest'?'s.created_at DESC,':sort==='favorites'?"(SELECT count(*) FROM user_house_states us WHERE us.target_kind='destination' AND us.target_id=s.destination_id AND us.is_favorite=1) DESC,":''}lower(coalesce(s.display_name,h.name)),s.id LIMIT 25 OFFSET ?`,[...args,window.offset]));
-  return {rows,total,page:window.page};
+  const rows=withCatalogHouseNames(await this.db.query(`SELECT s.id,s.destination_id,s.display_name,s.eso_owner,s.house_id,s.eso_server,s.description,s.tags,h.name catalog_house_name,h.zone,h.classification,h.style,h.population_limit,(SELECT i.id FROM house_images i WHERE i.saved_house_id=s.id ORDER BY i.position,i.id LIMIT 1) cover_image_id ${from} ORDER BY ${sort==='newest'?'s.created_at DESC,':sort==='favorites'?"(SELECT count(*) FROM user_house_states us WHERE us.target_kind='destination' AND us.target_id=s.destination_id AND us.is_favorite=1) DESC,":''}lower(coalesce(s.display_name,h.name)),s.id LIMIT 25 OFFSET ?`,[...args,window.offset]));
+  return {rows:await withHouseTours(this.w,{esoServer:environment},rows,{guest:true}),total,page:window.page};
  }
  async tours(environment,{q='',page=1}={}){
   const args=[requireEsoServer(environment)],where=["t.visibility='global'",'t.eso_server=?'];if(q){where.push('lower(t.name) LIKE ?');args.push('%'+String(q).slice(0,200).toLowerCase()+'%');}

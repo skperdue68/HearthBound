@@ -1,3 +1,4 @@
+import {withHouseTours} from './house-tour-memberships.js';
 import {orderTours} from '../utils/tour-list-order.js';
 import {TourFavoriteService} from './tour-favorite-service.js';
 import {applyPermissionPreview} from './permission-preview.js';
@@ -69,7 +70,7 @@ export class WebWorkspaceService{
  async decorateHouses(c,rows){
   if(!rows.length)return rows;
   const targets=[...new Set(rows.map(h=>Number(h.scope==='official'?h.house_id:h.destination_id)).filter(id=>id>0))];
-  const covered=await this.withHouseCovers(rows);
+  const covered=await withHouseTours(this,c,await this.withHouseCovers(rows));
   const states=targets.length?await this.db.query(`SELECT * FROM user_house_states WHERE discord_user_id=? AND target_id IN (${targets.map(()=>'?').join(',')})`,[c.userId,...targets]):[];
   const stateMap=new Map(states.map(state=>[`${state.target_kind}:${Number(state.target_id)}`,state]));
   return covered.map(h=>({...h,personal_state:stateMap.get(`${h.scope==='official'?'official':'destination'}:${Number(h.scope==='official'?h.house_id:h.destination_id)}`)||{is_favorite:0,visit_state:'none'}}));

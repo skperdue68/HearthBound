@@ -20,7 +20,6 @@ import { createSession, newSessionId, readSessionDetails, sessionLifetimeSeconds
 import { csrfMatches } from './session.js';
 import { page, escape } from './render.js';
 import {welcomePage,guildPickerPage} from './public-pages.js';
-import { createWebRateLimiter, rateLimitConfig } from './rate-limit.js';
 import {HSTS_HEADERS,SECURITY_HEADERS} from './security-headers.js';
 import {errorReference,publicErrorMessage} from '../utils/public-error.js';
 import { createWebRateLimiter, rateLimitConfig } from './rate-limit.js';
@@ -42,8 +41,6 @@ const readBody = (request,limit=8192) => new Promise((resolve, reject) => {
 export function createWebAdminServer({ service, workspace = null, config = {}, resolveOAuthIdentity, resolveGuildMembership, fetchImpl = fetch, now = () => Date.now(), sessionRevocations = null } = {}) {
   if (!service) throw new Error('WebAdminService is required.');
   const cfg = { lifetimeSeconds:sessionLifetimeSeconds({WEB_SESSION_DAYS:config.sessionDays??process.env.WEB_SESSION_DAYS}), sessionSecret: config.sessionSecret || process.env.WEB_SESSION_SECRET, oauth: config.oauth || { clientId: process.env.DISCORD_OAUTH_CLIENT_ID || process.env.DISCORD_CLIENT_ID, clientSecret: process.env.DISCORD_OAUTH_CLIENT_SECRET, redirectUri: process.env.DISCORD_OAUTH_REDIRECT_URI } };
-  // Per-client request limits (see rate-limit.js). Settings come from WEB_RATE_LIMIT_* and WEB_TRUST_PROXY unless supplied in config.
-  const rateLimiter = createWebRateLimiter(config.rateLimits || rateLimitConfig(process.env), config.rateLimitClock);
   // Strict-Transport-Security is only sent when the portal is configured for HTTPS.
   const hsts = String(cfg.oauth?.redirectUri || '').startsWith('https://') ? HSTS_HEADERS : {};
   const send = (response, status, body, headers = {}) => baseSend(response, status, body, { ...hsts, ...headers });

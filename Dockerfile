@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 WORKDIR /app
 COPY package*.json ./
 # Install exactly what package-lock.json pins, without dev dependencies.

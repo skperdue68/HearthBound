@@ -33,7 +33,7 @@ export function safeActionReturn(value,depth=0){
    if(key==='listPage'&&/^\/app\/searches\/\d+\/run$/.test(url.pathname)&&/^\d+$/.test(val)&&Number.isSafeInteger(Number(val))&&Number(val)>0)continue;
    if(key==='returnTo'){if(!safeHouseReturn(val))return null;}
    else if(key==='backTo'){if(!safeActionReturn(val,depth+1))return null;}
-   else if(!filters.has(key)&&!['mine','saved','copied','posted','adminReady','metric','addedHouse','started','deleted','status','type','name'].includes(key))return null;
+   else if(!filters.has(key)&&!['mine','favorites','saved','copied','posted','adminReady','metric','addedHouse','started','deleted','status','type','name'].includes(key))return null;
   }
   return url.pathname+url.search+url.hash;
  }catch{return null;}

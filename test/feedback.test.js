@@ -22,7 +22,7 @@ test('feedback persists across migration, remains private and restricts reviews 
   await assert.rejects(()=>service.review(owner,{id:item.id,revision:1,status:'resolved',notes:''}),/changed/i);
   await migrate(db);assert.equal((await service.list(owner,{status:'reviewed'})).total,1);
   env.BOT_OWNER_IDS='2';await assert.rejects(()=>service.list(owner),/owner/i);
-  assert.equal(Number((await one(db,'SELECT max(version) v FROM schema_migrations')).v),18);
+  assert.equal(Number((await one(db,'SELECT max(version) v FROM schema_migrations')).v),19);
  }finally{await closeDatabase(db);}
 });
 

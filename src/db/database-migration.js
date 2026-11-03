@@ -6,7 +6,7 @@ import { closeDatabase, ensureMariaDatabase, migrate, openDatabase, withTransact
 
 export const MIGRATION_CONFIRMATION = 'ERASE_TARGET_DATABASE';
 
-const OPTIONAL_V11 = new Set(['tour_favorites','owner_tour_groups','house_images','app_feedback',...Object.keys(CATALOG_TABLE_COLUMNS),'server_moderator_requests', 'server_moderators', 'featured_house_cycles', 'owner_catalog_houses', 'usage_events']);
+const OPTIONAL_V11 = new Set(['tour_cover_uploads','tour_covers','tour_favorites','owner_tour_groups','house_images','app_feedback',...Object.keys(CATALOG_TABLE_COLUMNS),'server_moderator_requests', 'server_moderators', 'featured_house_cycles', 'owner_catalog_houses', 'usage_events']);
 const TABLES = [
   ['app_feedback',FEEDBACK_COLUMNS],
   ['server_moderator_requests',['id', 'guild_id', 'discord_user_id', 'reason', 'status', 'revision', 'requested_at', 'reviewed_at', 'reviewed_by', 'discord_global_name', 'discord_display_name', 'guild_name']],
@@ -30,6 +30,8 @@ const TABLES = [
   ['house_images',['id','saved_house_id','storage_key','caption','position','created_by','created_at']],
   ['house_comments',['id','destination_id','saved_house_id','legacy_saved_house_id','saved_house_name','discord_user_id','discord_global_name','discord_display_name','comment_text','status','created_at','edited_at']],
   ['tours',['id','eso_server','visibility','guild_id','origin_guild_id','source_guild_id','creator_id','name','description','tags','house_source','created_at','updated_at','guild_name','origin_guild_name','source_guild_name','creator_global_name','creator_display_name','automatic_owner']],
+  ['tour_covers',['tour_id','storage_key','created_by','updated_at']],
+  ['tour_cover_uploads',['tour_id','storage_key','created_by','updated_at']],
   ['owner_tour_groups',['group_key','tour_id']],
   ['tour_favorites',['discord_user_id','tour_id','created_at']],
   ['tour_stops',['id','tour_id','position','saved_house_id','custom_title','notes','tour_name','saved_house_name']],
@@ -68,7 +70,7 @@ export async function transferUnifiedData(source,target){
     catch(err){
       if(!OPTIONAL_V11.has(table)||!(/no such table/i.test(err.message)||err.code==='ER_NO_SUCH_TABLE'))throw err;
       const versions=await source.query('SELECT MAX(version) version FROM schema_migrations');
-      if(Number(versions[0]?.version||0)>=(table==='tour_favorites'?18:table==='owner_tour_groups'?17:table==='house_images'?15:table==='app_feedback'?14:Object.hasOwn(CATALOG_TABLE_COLUMNS,table)?13:['owner_catalog_houses','usage_events'].includes(table)?12:11))throw err;
+      if(Number(versions[0]?.version||0)>=(table==='tour_cover_uploads'?19:table==='tour_covers'?16:table==='tour_favorites'?18:table==='owner_tour_groups'?17:table==='house_images'?15:table==='app_feedback'?14:Object.hasOwn(CATALOG_TABLE_COLUMNS,table)?13:['owner_catalog_houses','usage_events'].includes(table)?12:11))throw err;
       sourceRows.set(table,[]);
     }
   }

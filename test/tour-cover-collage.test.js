@@ -1,0 +1,48 @@
+import {GuestBrowseService} from '../src/services/guest-browse-service.js';
+import test from 'node:test';import assert from 'node:assert/strict';
+import sharp from 'sharp';import {mkdtemp,rm,writeFile} from 'node:fs/promises';import {join} from 'node:path';import {tmpdir} from 'node:os';
+import {fixture} from './workspace-fixture.js';import {closeDatabase} from '../src/db/database.js';import {TourCoverService} from '../src/services/tour-cover-service.js';import {HouseImageService} from '../src/services/house-image-service.js';
+import {createWebAdminServer} from '../src/web/server.js';import {WebAdminService} from '../src/services/web-admin-service.js';import {createSession,readSession} from '../src/web/session.js';
+import {buildTourCollage} from '../src/services/tour-cover-collage.js';
+import {OwnerTourService} from '../src/services/owner-tour-service.js';import {tourCollageTitle} from '../src/services/tour-collage-title.js';
+const photo=color=>sharp({create:{width:100,height:80,channels:3,background:color}}).png().toBuffer();
+test('owner collages retain owner text, refresh changed source covers and keep illustrated artwork without photos',async t=>{
+ const {db,svc,c}=await fixture(),dir=await mkdtemp(join(tmpdir(),'owner-collage-'));t.after(async()=>{await closeDatabase(db);await rm(dir,{recursive:true,force:true});});svc.images=new HouseImageService(svc,{directory:join(dir,'houses')});svc.tourCovers=new TourCoverService(svc,{directory:join(dir,'tours')});const owner=await svc.fresh({...c,userId:'1'}),h=await svc.registerHouse(owner,{houseId:1,esoOwner:'Builder',visibility:'global'}),sync=new OwnerTourService(svc);
+ await sync.runOnce();const tour=(await db.query('SELECT * FROM tours WHERE automatic_owner IS NOT NULL'))[0],initial=await svc.tourCovers.read(owner,tour.id);assert.equal((await sharp(initial).metadata()).width,1200);assert.match(tourCollageTitle({...tour,automatic_owner:'A<&B'}).toString(),/HOMES BY/);assert.match(tourCollageTitle({...tour,automatic_owner:'A<&B'}).toString(),/@A&lt;&amp;B/);
+ const image=await svc.images.add(owner,h.id,await photo('#ff0000'));await sync.runOnce();const collage=await svc.tourCovers.read(owner,tour.id);assert.notDeepEqual(collage,initial);assert.ok((await sharp(collage).extract({left:200,top:200,width:1,height:1}).removeAlpha().raw().toBuffer())[0]>200);
+ const key=(await db.query('SELECT storage_key FROM tour_covers WHERE tour_id=?',[tour.id]))[0].storage_key;await sync.runOnce();assert.equal((await db.query('SELECT storage_key FROM tour_covers WHERE tour_id=?',[tour.id]))[0].storage_key,key);
+ await db.query("UPDATE saved_houses SET status='pending' WHERE id=?",[h.id]);assert.deepEqual(await svc.tourCovers.read(owner,tour.id),initial);assert.deepEqual(await new GuestBrowseService(svc).tourImage(tour.id),initial);assert.deepEqual(await svc.tourCovers.readForPass(owner,'A'.repeat(32),{resolveTourPass:async()=>({tour})}),initial);await db.query("UPDATE saved_houses SET status='active' WHERE id=?",[h.id]);
+ await svc.images.remove(owner,h.id,image.id);assert.deepEqual(await svc.tourCovers.read(owner,tour.id),initial);await sync.runOnce();assert.deepEqual(await svc.tourCovers.read(owner,tour.id),initial);
+});
+test('eligibility uses current locking reads rather than an older MariaDB snapshot',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'collage-snapshot-'));t.after(()=>rm(dir,{recursive:true,force:true}));const file=join(dir,'photo.webp');await writeFile(file,await photo('#ff0000'));
+ const stale={id:1,scope:'global',status:'active',eso_server:'pc_na',cover_key:'photo.webp'},queries=[],conn={query:async sql=>{queries.push(sql);if(sql.includes('SELECT DISTINCT saved_house_id')||sql.startsWith('SELECT saved_house_id'))return [{saved_house_id:1}];if(sql.startsWith('SELECT * FROM saved_houses'))return [{...stale,status:'pending'}];if(sql.startsWith('SELECT id FROM saved_houses'))return [{id:1}];if(sql.includes('JOIN saved_houses'))return [stale];if(sql.includes('FROM house_images'))return [{storage_key:'photo.webp'}];throw Error('Unexpected query: '+sql);}};
+ await assert.rejects(()=>buildTourCollage({policy:{canViewHouse:()=>true},images:{filePath:()=>file}},{userId:'1'},{id:1,visibility:'global',eso_server:'pc_na'},conn),/available cover photos/);
+ assert.ok(queries.some(sql=>sql==='SELECT * FROM saved_houses WHERE id=? FOR UPDATE'));
+});
+test('collage fills nine slots in stop order even when an early file is unreadable',async t=>{
+ const {db,svc,c}=await fixture(),dir=await mkdtemp(join(tmpdir(),'tour-collage-nine-'));t.after(async()=>{await closeDatabase(db);await rm(dir,{recursive:true,force:true});});svc.images=new HouseImageService(svc,{directory:join(dir,'houses')});svc.tourCovers=new TourCoverService(svc,{directory:join(dir,'tours')});const owner=await svc.fresh({...c,userId:'1'}),ids=[];
+ for(let i=0;i<11;i++){const h=await svc.registerHouse(owner,{houseId:1,esoOwner:'Builder'+i,visibility:'global'});ids.push(h.id);await svc.images.add(owner,h.id,await photo('#123456'));}
+ const tour=await svc.saveTourDraft(owner,{details:{name:'Many photos',visibility:'global'},stopIds:ids});const first=(await db.query('SELECT storage_key FROM house_images WHERE saved_house_id=?',[ids[0]]))[0];await writeFile(svc.images.filePath(first.storage_key),'unreadable');
+ const result=await svc.tourCovers.generate(owner,tour.id);assert.equal(result.images,9);assert.equal(result.skipped,1);assert.equal((await sharp(await svc.tourCovers.read(owner,tour.id)).metadata()).width,1200);
+});
+test('tour collage uses house covers in stop order, skips missing photos and retains the old cover on empty or forbidden requests',async t=>{
+ const {db,svc,c}=await fixture(),directory=await mkdtemp(join(tmpdir(),'tour-collage-'));t.after(async()=>{await closeDatabase(db);await rm(directory,{recursive:true,force:true});});svc.images=new HouseImageService(svc,{directory:join(directory,'houses')});svc.tourCovers=new TourCoverService(svc,{directory:join(directory,'tours')});const owner=await svc.fresh({...c,userId:'1'});
+ const a=await svc.registerHouse(owner,{houseId:1,esoOwner:'Red',visibility:'global'}),b=await svc.registerHouse(owner,{houseId:2,esoOwner:'Blue',visibility:'global'});await svc.images.add(owner,a.id,await photo('#ff0000'));await svc.images.add(owner,b.id,await photo('#0000ff'));
+ const tour=await svc.saveTourDraft(owner,{details:{name:'Colors',visibility:'global'},stopIds:[a.id,b.id]});await svc.tourCovers.save(owner,tour.id,await photo('#00ff00'));const before=await svc.tourCovers.read(owner,tour.id);
+ await assert.rejects(()=>svc.tourCovers.generate(c,tour.id),/editing/);assert.deepEqual(await svc.tourCovers.read(owner,tour.id),before);
+ const result=await svc.tourCovers.generate(owner,tour.id);assert.equal(result.images,2);const bytes=await svc.tourCovers.read(owner,tour.id),meta=await sharp(bytes).metadata();assert.equal(meta.width,1200);assert.equal(meta.height,630);
+ const pixel=async x=>[...await sharp(bytes).extract({left:x,top:200,width:1,height:1}).removeAlpha().raw().toBuffer()];assert.ok((await pixel(200))[0]>200);assert.ok((await pixel(1000))[2]>200);
+ await db.query("UPDATE saved_houses SET status='pending' WHERE id=?",[b.id]);assert.equal((await svc.tourCovers.generate(owner,tour.id)).images,1);
+ await db.query("UPDATE saved_houses SET scope='private',owner_user_id='1' WHERE id=?",[a.id]);const single=await svc.tourCovers.read(owner,tour.id);await assert.rejects(()=>svc.tourCovers.generate(owner,tour.id),/available cover photos/);assert.deepEqual(await svc.tourCovers.read(owner,tour.id),single);
+});
+test('web collage action enforces CSRF and context, refreshes in place, and supports native forms',async t=>{
+ const {db,svc,c}=await fixture(),dir=await mkdtemp(join(tmpdir(),'tour-collage-web-'));svc.images=new HouseImageService(svc,{directory:join(dir,'houses')});svc.tourCovers=new TourCoverService(svc,{directory:join(dir,'tours')});
+ const owner=await svc.fresh({...c,userId:'1'}),h=await svc.registerHouse(owner,{houseId:1,esoOwner:'Builder',visibility:'global'}),tour=await svc.saveTourDraft(owner,{details:{name:'Photo route',visibility:'global'},stopIds:[h.id]});await svc.images.add(owner,h.id,await photo('#663399'));
+ const server=createWebAdminServer({service:new WebAdminService(db),workspace:svc,config:{sessionSecret:'test-secret'},resolveGuildMembership:async()=>({id:'g',name:'Guild',roleIds:[],esoServer:'pc_na'})});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(async()=>{await new Promise(r=>server.close(r));await closeDatabase(db);await rm(dir,{recursive:true,force:true});});
+ const token=createSession({id:'1',selectedGuildId:'g',guilds:[{id:'g'}]},Date.now(),'test-secret'),cookie='addressbook_session='+token,csrf=readSession(token,Date.now(),'test-secret').csrf,url=`http://127.0.0.1:${server.address().port}/app/tours/${tour.id}/cover`;
+ const post=(fields={},json=true)=>fetch(url,{method:'POST',headers:{cookie,...(json?{Accept:'application/json'}:{})},body:new URLSearchParams({action:'generate',csrf,contextGuildId:'g',contextEsoServer:'pc_na',...fields}),redirect:'manual'});
+ assert.equal((await post({csrf:'wrong'})).status,403);assert.equal((await post({contextEsoServer:'pc_eu'})).status,403);assert.equal(await svc.tourCovers.get(owner,tour.id),null);
+ const generated=await post();assert.equal(generated.status,200);const data=await generated.json();assert.match(data.message,/1 house photo/);assert.match(data.coverHtml,/data-tour-cover-generate/);assert.match(data.heroHtml,/tour-cover-image/);
+ assert.equal((await post({},false)).status,302);assert.match((await post({},false)).headers.get('location'),/#tour-cover$/);
+});

@@ -1,8 +1,9 @@
 document.querySelectorAll('[data-tour-cover]').forEach(panel=>{
  if(!panel.querySelector('[data-tour-cover-upload]'))return;
- let saving=false;
- const message=(text,error=false)=>{const el=panel.querySelector('[data-tour-cover-status]');el.textContent=text;el.classList.toggle('upload-error',error);};
- const enhance=()=>{const button=panel.querySelector('[data-tour-cover-submit]');if(button)button.hidden=true;};enhance();
+ let saving=false,toastTimer;
+ const notify=(text,error=false)=>{let toast=document.querySelector('[data-tour-cover-toast]');if(!toast){toast=document.createElement('div');toast.setAttribute('data-tour-cover-toast','');toast.className='tour-cover-toast';toast.setAttribute('aria-hidden','true');document.body.append(toast);}clearTimeout(toastTimer);toast.textContent=text;toast.classList.toggle('is-error',error);toast.hidden=false;toastTimer=setTimeout(()=>{toast.hidden=true;},error?8000:5000);};
+ const message=(text,error=false)=>{const el=panel.querySelector('[data-tour-cover-status]');el.textContent=text;el.classList.toggle('upload-error',error);if(error)notify(text,true);};
+ const enhance=()=>{const button=panel.querySelector('[data-tour-cover-submit]');if(button)button.hidden=true;const actions=panel.querySelector('[data-tour-cover-upload-actions]');if(actions)actions.hidden=true;};enhance();
  async function save(form,action){
   if(saving)return;
   const input=form.querySelector('[type=file]');
@@ -11,6 +12,7 @@ document.querySelectorAll('[data-tour-cover]').forEach(panel=>{
    const error=file.size>5*1024*1024?'Choose an image no larger than 5 MB.':file.size===0?'The selected file is empty.':file.type&&!['image/png','image/jpeg','image/webp'].includes(file.type)?'Choose a PNG, JPEG or WebP image.':'';
    if(error){message(error,true);return;}
   }
+  const visibleToast=document.querySelector('[data-tour-cover-toast]');if(visibleToast)visibleToast.hidden=true;clearTimeout(toastTimer);
   const payload=new FormData(form);payload.set('action',action);
   const top=panel.querySelector('[data-tour-cover-dropzone]').getBoundingClientRect().top,controls=[...panel.querySelectorAll('input,button')],disabled=controls.map(el=>el.disabled);
   saving=true;panel.setAttribute('aria-busy','true');controls.forEach(el=>el.disabled=true);message(action==='remove'?'Removing tour image…':action==='generate'?'Creating collage from tour houses…':action==='restore'?'Restoring saved cover…':'Uploading tour image…');
@@ -22,11 +24,11 @@ document.querySelectorAll('[data-tour-cover]').forEach(panel=>{
    const template=document.createElement('template');template.innerHTML=data.coverHtml||'';const updated=template.content.querySelector('[data-tour-cover]');
    if(!updated?.querySelector('[data-tour-cover-upload]'))throw Error('The image was saved, but this page could not refresh. Reload before retrying.');
    const hero=document.querySelector('[data-tour-cover-hero]');if(hero&&data.heroHtml){const imageTemplate=document.createElement('template');imageTemplate.innerHTML=data.heroHtml;const freshHero=imageTemplate.content.querySelector('[data-tour-cover-hero]');if(freshHero)hero.replaceWith(freshHero);}
-   panel.replaceChildren(...updated.childNodes);enhance();message(data.message||(action==='remove'?'Tour image removed.':'Tour image saved. Drop or choose another image to change it.'));
+   panel.replaceChildren(...updated.childNodes);enhance();message(data.message||(action==='upload'?'Tour cover uploaded successfully. You can choose or drop another image.':action==='remove'?'Tour image removed.':'Tour image saved.'));if(action==='upload')notify('✓ Tour cover uploaded successfully.');
    requestAnimationFrame(()=>{const delta=panel.querySelector('[data-tour-cover-dropzone]').getBoundingClientRect().top-top;if(Math.abs(delta)>1)window.scrollBy({top:delta,behavior:'instant'});});
   }catch(error){
    controls.forEach((el,i)=>el.disabled=disabled[i]);message(error.name==='AbortError'?'Upload timed out. Your file is still selected; try again.':error.message,true);
-   if(action==='upload'){const retry=panel.querySelector('[data-tour-cover-submit]');retry.hidden=false;retry.textContent='Retry upload';}
+   if(action==='upload'){const retry=panel.querySelector('[data-tour-cover-submit]');retry.hidden=false;retry.textContent='Retry upload';const actions=panel.querySelector('[data-tour-cover-upload-actions]');if(actions)actions.hidden=false;}
   }finally{clearTimeout(timeout);saving=false;panel.removeAttribute('aria-busy');}
  }
  panel.addEventListener('change',event=>{if(event.target.matches('[data-tour-cover-upload] [type=file]'))save(event.target.closest('form'),'upload');});

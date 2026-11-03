@@ -4,9 +4,9 @@
 
 ## Getting started
 
-Use `/hearth` or `/housing` to open the main menu, or sign in to the web portal with Discord. Pick the job you want to do: register a house, build a tour, explore houses or tours, or keep favorites and visit plans in My Address Book. First use opens the normal menu; training screens have been retired.
+Use `/hearth` or `/housing` to open the main menu, or sign in to the web portal with Discord. Pick the job you want to do: register a house, build a tour, explore houses or tours, or keep favorite places and your registrations in My Address Book. First use opens the normal menu; training screens have been retired.
 
-House cards expose Favorite or Unfavorite, Want to Visit or Unmark, Visited or Unmark, and Add Comment. Personal changes preserve the current house or tour stop. On the web, the visit selector saves automatically and reports success or failure. Choose Not marked to clear visit status. A favorite is independent of visit status.
+Use the heart to favorite or unfavorite a house or tour. Comments opens the reader and its Add Comment action. Personal changes preserve the current house or tour stop. Visit-status controls have been retired; older stored preferences are preserved.
 
 **Support & Access** contains separate Server and Global access requests, feedback, and the downloadable guide. It replaces Help & Learning.
 
@@ -67,7 +67,7 @@ Comments attach to the environment-specific ESO destination, not to one visibili
 
 In Discord, Comments opens a newest-first reader with two comments per page. The author and date appear above each comment. First/Previous/Next/Last and Jump to page make older discussions reachable; Add Comment returns to the newest page, and Back returns to the house or current tour stop. Direct Add Comment on a house or stop still returns to that original card. Every page and submission rechecks access, including Share Pass revocation and changes to a tour's current stop.
 
-Every accessible player or Non-Player house includes **Personal Actions**. A member can independently mark a destination as a Favorite and set one visit state: Want to Visit, Visited, or neither. These private preferences do not change house visibility or grant access. My Address Book provides paginated Favorites, Want to Visit, Visited, and Saved Searches lists, and inaccessible destinations are removed from personal list results at read time.
+Hearts bookmark accessible destinations without duplicating them or granting access. My Address Book separates saved places, Favorites, Your registrations, Recently viewed and Saved Searches. Inaccessible records remain excluded at read time. See [My Address Book explained](my-address-book.md) for the distinction between a favorite and an independent copy.
 
 
 ## Tours
@@ -189,7 +189,7 @@ See the [HearthBound web workflow guide](web-workflows.md) for personal collecti
 
 ## My Address Book and navigation
 
-My Address Book is your intentional collection: submitted houses, favorites, places you want to visit, and visited places. Simply viewing a house does not add it. All Saved Places combines those lists without duplicate physical destinations; Submitted shows just your registrations. Clearing one mark does not delete the registered house or remove independent marks.
+My Address Book is your intentional collection: houses you registered, favorites, and tours you created or saved. Simply viewing a house does not add it to Favorites. All Saved Places combines registrations and saved places without duplicate physical destinations; Your registrations shows your submissions and independent copies. A heart bookmarks the original record; Make my own copy creates a separate editable registration or Private route where permitted. Unfavoriting does not delete the record. [Read the full explanation](my-address-book.md).
 
 House details show visit commands, official information and all normally visible tours containing that destination. Private or foreign-server tours you cannot normally view are omitted. Featured Housing includes descriptions, owner, location and tour stop counts. Comments show author and timestamp above their text.
 
@@ -205,7 +205,7 @@ Tour builders can enter optional tour-specific notes directly on each draft stop
 
 House screenshots: open a house’s gallery on the web or select Screenshots in Discord. Add up to eight images with optional captions using the web upload form or `/hearth house:… screenshot:… caption:…` (also `/housing`). Only house editors can upload, choose the cover, or remove screenshots. Private images remain creator-only.
 
-House discovery uses descriptive cards with Favorite, visit status, View house and Add to tour actions. Basic Search also offers Compact list. Cards and pagination retain filters; tags open matching searches. My Address Book puts All saved, Favorites, Want to Visit and Visited first on web and Discord, followed by submitted records and organizing tools.
+House discovery uses descriptive cards with a favorite heart, View house and Add to tour actions. Basic Search also offers Compact list. Cards and pagination retain filters; tags open matching searches. My Address Book separates All saved, Favorites, Your registrations and Recently viewed, followed by created/favorite tours and organizing tools.
 
 Web lists with multiple pages offer numbered navigation and Jump to page. Stale page links return to an available page while retaining filters. If the last item on a page is deleted or no longer matches, earlier records remain reachable instead of showing a misleading empty list. Saved-place categories use the same paging controls.
 

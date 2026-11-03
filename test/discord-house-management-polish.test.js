@@ -52,7 +52,7 @@ test('deleting from management returns to the refreshed house list',async()=>{
  const menu=createHousingMenu(db);let payload;const i={guildId:'g',channelId:'c',guild:{name:'Guild'},user:{id:'1',username:'Owner'},member:{roles:{cache:new Map()}},update:async p=>payload=p,reply:async p=>payload=p};
  const click=async label=>{const b=controls(payload).find(b=>b.label===label);assert.ok(b,`Missing ${label}`);await menu.button({...i,message:payload,customId:b.custom_id});};
  await menu.button({...i,customId:'hu:my:houses'});await menu.select({...i,customId:controls(payload).find(b=>b.type===3).custom_id,values:['0']});await click('Manage House');await click('Delete House');await click('Confirm');
- assert.match(payload.embeds[0].toJSON().title,/My Houses/);assert.equal(controls(payload).find(b=>b.type===3).options.length,1);
+ assert.match(payload.embeds[0].toJSON().title,/Your registrations/);assert.equal(controls(payload).find(b=>b.type===3).options.length,1);
  }finally{await closeDatabase(db);}
 });
 test('pending houses do not reopen normal management for their creator',async()=>{

@@ -1150,12 +1150,12 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:my:houses'){
       const rows=(await myAddressBook.houses(i.user.id,guilds.getEsoServer(i.guildId))).map(legacySavedRow);
       if(!rows.length)return i.update({...await dashboard(i),content:'You have not registered or saved any houses yet.'});
-      return i.update(createPicker(i,{kind:'visit',rows,extra:{title:'🏠 My Houses',description:`You have ${rows.length} saved or submitted house${rows.length===1?'':'s'}. Global houses appear first, then Server, then Private.`},backId:'hu:my'}));
+      return i.update(createPicker(i,{kind:'visit',rows,extra:{title:'🏠 Your registrations',description:`You have ${rows.length} registered house${rows.length===1?'':'s'}. Global houses appear first, then Server, then Private.`},backId:'hu:my'}));
     }
     if(id==='hu:my:tours'){
       const created=await myAddressBook.tours(i.user.id,guilds.getEsoServer(i.guildId)),savedTours=await tourFavorites.list({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||[])]});const rows=[...new Map([...created,...savedTours].filter(t=>contentPolicy.canViewTour(t,contextFor(i))).map(t=>[Number(t.id),{...t,scope:t.visibility==='private'?'personal':t.visibility==='public'?'server':'global'}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
       if(!rows.length)return i.update({...await dashboard(i),content:'You have not created or favorited any tours yet.'});
-      return i.update(createPicker(i,{kind:'tour-view',rows,extra:{title:'🗺️ My Tours',description:`You have created or favorited ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
+      return i.update(createPicker(i,{kind:'tour-view',rows,extra:{title:'🗺️ Created & saved tours',description:`You have created or favorited ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
     }
     if(id==='hu:my:pending')return i.update(myPendingPayload(await myAddressBook.pending(i.user.id,guilds.getEsoServer(i.guildId),i.guildId)));
     if(id==='hu:my:recent'){

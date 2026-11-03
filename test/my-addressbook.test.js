@@ -20,13 +20,13 @@ test('My Address Book renders personal counts and dashboard actions',()=>{
   const json=payload.embeds[0].toJSON();
   assert.match(json.title,/My Address Book/);
   assert.deepEqual(json.fields.map(field=>[field.name,field.value]),[
-    ['🏠 My Houses','**18**'],['🗺️ My Tours','**4**'],
+    ['🏠 Your registrations','**18**'],['🗺️ Created & saved tours','**4**'],
     ['⏳ Access requests','**2**'],['🕘 Recently Viewed','**3**'],
     ['⭐ Favorites','**0**'],['🔎 Saved Searches','**0**']
   ]);
   assert.deepEqual(labels(payload),[
-    'All Saved Places','Favorites','Submitted Houses',
-    'My Tours','Tour Progress','Recently Viewed','Saved Searches','Access requests','Main Menu'
+    'All Saved Places','Favorites','Your registrations',
+    'Created & saved tours','Tour Progress','Recently Viewed','Saved Searches','Access requests','Main Menu'
   ]);
 });
 

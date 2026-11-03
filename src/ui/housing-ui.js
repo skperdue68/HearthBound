@@ -50,7 +50,7 @@ export function onboardingPayload({page=0}={}){
     1:{title:'Introduction 1 of 7 — Find the Right House',description:'Search begins with all homes you can access. Open Filters when you want to narrow the list.',fields:[['What you can search','House or nickname, owner, tags, themes, zone, architectural style, ESO classification, size/type, and visibility.'],['Useful switches','Include Non-Player Homes or find houses not already included in a Server or Global tour.']]},
     2:{title:'Introduction 2 of 7 — Register in Seconds',description:'Save a destination without memorizing a complicated format.',fields:[['Flexible destination input','Paste an ESO Housing Link, a jump command, `("@Owner", 62)`, or enter an owner and part of the official house name.'],['Choose visibility','Global shares within the exact ESO environment, Server stays in this Discord server, and Private belongs only to you.']]},
     3:{title:'Introduction 3 of 7 — Visit and Explore',description:'House cards keep the useful ESO actions together and easy to copy.',fields:[['Copy-ready commands','Jump in ESO, Unfurnished Preview, and Housing Link each appear in a separate code block.'],['Helpful context','See house details, who submitted it, its visibility, comments, and every visible tour that includes it.']]},
-    4:{title:'Introduction 4 of 7 — Your HearthBound',description:'My Address Book is your private dashboard for work you created or recently used.',fields:[['Keep moving','Open My Houses, My Tours, Pending submissions, Recently Viewed, or resume an active tour.'],['Older data','If an older house or tour has no ESO environment, preview and assign your eligible legacy records here.']]},
+    4:{title:'Introduction 4 of 7 — Your HearthBound',description:'My Address Book gathers your registrations, favorite places, and tours you created or saved. Records keep their chosen visibility.',fields:[['Keep moving','Open My Houses, My Tours, Pending submissions, Recently Viewed, or resume an active tour.'],['Older data','If an older house or tour has no ESO environment, preview and assign your eligible legacy records here.']]},
     5:{title:'Introduction 5 of 7 — Build and Follow Tours',description:'Create a tour manually or build one from filtered search results, then arrange its route and stop notes.',fields:[['Self-Paced','Each visitor advances privately at their own speed and can resume progress later.'],['Shared','The route appears in a channel for the group, while only the tour leader controls navigation.']]},
     6:{title:'Introduction 6 of 7 — Share Without Going Public',description:'A Share Pass can post a house or tour to a channel without changing its normal visibility.',fields:[['Stay in control','Revoke passes when they are no longer needed. Tour Pass visitors receive independent Self-Paced sessions.'],['Make your own copy','When a pass is the only reason you can see someone else’s Private house, Copy House lets you review and save an editable entry of your own.']]},
     7:{title:'Introduction 7 of 7 — Visibility and Safety',description:'HearthBound keeps discovery boundaries predictable: Global, then Server, then Private.',fields:[['Environment boundary','Global content is shared only between Discord servers configured for the exact same ESO environment.'],['Community tools','Report misleading, inappropriate, or inaccessible listings. Housing and Global Moderators receive the applicable review queues.']]}
@@ -72,10 +72,10 @@ export function onboardingPayload({page=0}={}){
   return {embeds:[e],components:[...buttonRows(navigation),...buttonRows([{...contextual,style:'primary'}])]};
 }
 export function myAddressBookPayload({houses=0,tours=0,pending=0,recent=0,favorites=0,wantToVisit=0,visited=0,savedSearches=0,continueItems=null,legacy=null,esoServer=null,backId='hu:home'}={}){
-  const e=embed('📖 My Address Book','Keep places that stand out to you: favorites and houses you submit. Your saved lists are personal.')
+  const e=embed('📖 My Address Book','Your registered houses, favorite places, and tours you created or saved. Favorites bookmark existing entries; they do not grant editing rights. Make my own copy creates a separate editable copy when allowed. Your collection is personal; records keep their chosen visibility.')
     .addFields(
-      {name:'🏠 My Houses',value:`**${Number(houses)}**`,inline:true},
-      {name:'🗺️ My Tours',value:`**${Number(tours)}**`,inline:true},
+      {name:'🏠 Your registrations',value:`**${Number(houses)}**`,inline:true},
+      {name:'🗺️ Created & saved tours',value:`**${Number(tours)}**`,inline:true},
       {name:'⏳ Access requests',value:`**${Number(pending)}**`,inline:true},
       {name:'🕘 Recently Viewed',value:`**${Number(recent)}**`,inline:true},
       {name:'⭐ Favorites',value:`**${Number(favorites)}**`,inline:true},
@@ -90,8 +90,8 @@ export function myAddressBookPayload({houses=0,tours=0,pending=0,recent=0,favori
   return {embeds:[e],components:[...buttonRows(continueActions),...buttonRows([
     {customId:'hu:my:library',label:'All Saved Places',style:'primary',emoji:'📖'},
     {customId:'hu:my:favorites',label:'Favorites',style:'secondary',emoji:'⭐'},
-    {customId:'hu:my:houses',label:'Submitted Houses',style:'secondary',emoji:'🏠'},
-    {customId:'hu:my:tours',label:'My Tours',style:'secondary',emoji:'🗺️'},
+    {customId:'hu:my:houses',label:'Your registrations',style:'secondary',emoji:'🏠'},
+    {customId:'hu:my:tours',label:'Created & saved tours',style:'secondary',emoji:'🗺️'},
     {customId:'hu:my:progress',label:'Tour Progress',style:'secondary',emoji:'🧭'},
     {customId:'hu:my:recent',label:'Recently Viewed',style:'secondary',emoji:'🕘'},
     {customId:'hu:my:searches',label:'Saved Searches',style:'secondary',emoji:'🔎'},

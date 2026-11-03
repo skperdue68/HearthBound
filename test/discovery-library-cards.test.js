@@ -15,8 +15,8 @@ test('decoration adds only the current member’s marks for visible houses',asyn
  const other=await svc.fresh({...c,userId:'1'});assert.equal((await svc.listHouses(other)).rows.length,0);
  }finally{await closeDatabase(db);}
 });
-test('saved-place navigation puts favorites and visit plans before management tools on web and Discord',()=>{
- const html=personalNavigation('/app/personal/favorites');assert.ok(html.includes('aria-current="page"'));assert.ok(html.indexOf('Favorites')<html.indexOf('Submitted'));assert.ok(html.includes('Organize'));
+test('saved-place navigation puts favorites and registrations before organizing tools on web and Discord',()=>{
+ const html=personalNavigation('/app/personal/favorites');assert.ok(html.includes('aria-current="page"'));assert.ok(html.indexOf('Favorites')<html.indexOf('Your registrations'));assert.ok(html.includes('Organize'));
  const rows=myAddressBookPayload({}).components.map(row=>row.toJSON().components);assert.deepEqual(rows.flat().filter(button=>['hu:my:library','hu:my:favorites','hu:my:want','hu:my:visited'].includes(button.custom_id)).map(button=>button.custom_id),['hu:my:library','hu:my:favorites']);
 });
 import {createWebAdminServer} from '../src/web/server.js';import {WebAdminService} from '../src/services/web-admin-service.js';import {createSession,readSession} from '../src/web/session.js';

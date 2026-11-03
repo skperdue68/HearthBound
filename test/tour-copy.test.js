@@ -44,7 +44,7 @@ test('preview reuses normally accessible stops and copies only inaccessible Priv
     assert.equal(preview.stops[3].sourceSavedHouseId,records.ownerPrivate.id);
     const payload=tourCopyPreviewPayload(preview,{token:'opaque'});
     assert.match(payload.embeds[0].toJSON().description,/independent Private tour/i);
-    assert.deepEqual(payload.components.flatMap(row=>row.toJSON().components.map(component=>component.label)),['Copy Private Tour','Cancel']);
+    assert.deepEqual(payload.components.flatMap(row=>row.toJSON().components.map(component=>component.label)),['Create my Private tour copy','Cancel']);
   }finally{await closeDatabase(db);}
 });
 

@@ -41,7 +41,7 @@ test('browse house details survive comments and Previous/Next navigation', async
     await button(control('Previous House').custom_id);
     assert.ok(control('Hide Details'));
     await button(control('Back to Results').custom_id);
-    assert.match(rendered.embeds[0].toJSON().title,/My Houses/);
+    assert.match(rendered.embeds[0].toJSON().title,/Your registrations/);
   }finally{await closeDatabase(db);}
 });
 

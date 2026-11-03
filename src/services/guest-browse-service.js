@@ -34,7 +34,7 @@ export class GuestBrowseService{
  }
  async images(id){await this.house(id);return this.db.query('SELECT id,caption FROM house_images WHERE saved_house_id=? ORDER BY position,id',[Number(id)]);}
  async houseImage(id,imageId){await this.house(id);const row=await one(this.db,'SELECT storage_key FROM house_images WHERE saved_house_id=? AND id=?',[Number(id),Number(imageId)]);if(!row)throw Error('Image unavailable.');return readFile(this.w.images.filePath(row.storage_key));}
- async tourImage(id){const tour=await this.w.tours.get(Number(id));if(!tour||tour.visibility!=='global'||!normalizeEsoServer(tour.eso_server))throw Error('Image unavailable.');const row=await one(this.db,'SELECT storage_key FROM tour_covers WHERE tour_id=?',[Number(id)]);if(!row)throw Error('Image unavailable.');return readFile(this.w.tourCovers.filePath(row.storage_key));}
+ async tourImage(id){const tour=await this.w.tours.get(Number(id));if(!tour||tour.visibility!=='global'||!normalizeEsoServer(tour.eso_server))throw Error('Image unavailable.');const row=await one(this.db,'SELECT storage_key FROM tour_covers WHERE tour_id=?',[Number(id)]);if(!row)throw Error('Image unavailable.');return this.w.tourCovers.readBytes(tour);}
  async houseTours(id){const h=await this.house(id);return (await withHouseTours(this.w,{esoServer:h.eso_server},[h],{guest:true}))[0].associated_tours;}
  async random(environment){const row=await one(this.db,`SELECT id FROM saved_houses WHERE scope='global' AND status='active' AND eso_server=? ORDER BY ${this.db.type==='mariadb'?'RAND()':'RANDOM()'} LIMIT 1`,[requireEsoServer(environment)]);return row?this.house(row.id):null;}
 }

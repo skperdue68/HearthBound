@@ -1,0 +1,6 @@
+import {esoServerLabel} from '../utils/eso-server.js';
+const xml=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+export function tourCollageTitle(tour){
+ const owner=tour.automatic_owner,title=owner?'@'+String(owner).replace(/^@+/,''):String(tour.name||'Housing tour'),characters=Array.from(title),label=characters.length>48?characters.slice(0,47).join('')+'…':title;
+ return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs><linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0b1525" stop-opacity="0"/><stop offset=".35" stop-color="#0b1525" stop-opacity=".88"/><stop offset="1" stop-color="#0b1525" stop-opacity=".98"/></linearGradient></defs><rect x="0" y="380" width="1200" height="250" fill="url(#shade)"/><g font-family="DejaVu Sans,Arial,sans-serif"><text x="44" y="466" fill="#edc16e" font-size="20" letter-spacing="4">${owner?'HOMES BY':'HOUSING TOUR'}</text><text x="44" y="527" fill="#fff3dc" font-size="${characters.length>32?36:50}" font-weight="bold">${xml(label)}</text><text x="44" y="582" fill="#c1d0e1" font-size="19">HearthBound · ${xml(esoServerLabel(tour.eso_server))}${owner?' · Automatic owner tour':''}</text></g></svg>`);
+}

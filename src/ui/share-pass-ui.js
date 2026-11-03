@@ -11,7 +11,7 @@ export function sharedPrivateHousePayload(house,{token,passId,canCopy=false,back
   const current=embed.toJSON().description||'';
   embed.setDescription(`🔒 **Shared Private access** — this house remains excluded from normal search and browsing.\n\n${current}`.slice(0,4096));
   const actions=[];
-  if(canCopy)actions.push({customId:`hu:pass:house:copy:${componentToken}`,label:'Copy to My Address Book',style:'success'});
+  if(canCopy)actions.push({customId:`hu:pass:house:copy:${componentToken}`,label:'Make my own house copy',style:'success'});
   actions.push(
     {customId:`hu:pass:house:comments:${componentToken}`,label:'Comments',style:'primary'},
     {customId:`hu:pass:house:details:${showDetails?'hide':'show'}:${componentToken}`,label:showDetails?'Hide Details':'More Details',style:'primary'},
@@ -78,10 +78,10 @@ export function housePassManagementPayload(rows,{page=0,pages=1}={}){
 
 export function houseCopyVisibilityPayload(preview,{token}={}){
   const explanation=preview.choices.filter(choice=>!choice.enabled).map(choice=>`**${choice.label}:** ${choice.reason}`).join('\n');
-  const embed=new EmbedBuilder().setColor(0x2b7ddd).setTitle('Copy House to My Address Book').setDescription([
+  const embed=new EmbedBuilder().setColor(0x2b7ddd).setTitle('Make my own house copy').setDescription([
     `**Official house:** ${preview.destination.houseName}`,
     `**ESO owner:** @${String(preview.destination.esoOwner).replace(/^@/,'')}`,
-    '', 'Choose the visibility for your independent saved entry. The ESO destination stays the same; nickname, description, and tags can be edited next.',
+    '', 'Favorite is a bookmark while you have access. Copying creates your own editable registration, not ownership of the ESO house.', '', 'Choose the visibility for your independent saved entry. The ESO destination stays the same; nickname, description, and tags can be edited next.',
     explanation?'':null,explanation||null
   ].filter(value=>value!==null).join('\n'));
   return {embeds:[embed],components:buttonRows([
@@ -114,20 +114,20 @@ export function tourShareCardPayload(tour,{token,sharerName='A housing visitor',
   return webPassLink({embeds:[embed],components:buttonRows([
     {customId:`hu:pass:tour:start:${token}`,label:'Start Self-Paced Tour',style:'success'},
     {customId:`hu:pass:tour:info:${token}`,label:'Tour Information',style:'primary'},
-    {customId:`hu:pass:tour:copy:${token}`,label:'Copy Tour to My Address Book',style:'secondary'},
+    {customId:`hu:pass:tour:copy:${token}`,label:'Make my own tour copy',style:'secondary'},
     {customId:`hu:pass:tour:report:${token}`,label:'Report a Problem',style:'secondary'}
   ])},'tour',token,portalUrl);
 }
 
 export function tourCopyPreviewPayload(preview,{token}={}){
   const advisories=preview.advisories?.length?`\n\n⚠️ ${preview.advisories.map(item=>item.message).join(' ')}`:'';
-  const embed=new EmbedBuilder().setColor(0x2b7ddd).setTitle('Copy Tour to My Address Book').setDescription(discordDescription([
+  const embed=new EmbedBuilder().setColor(0x2b7ddd).setTitle('Make my own tour copy').setDescription(discordDescription([
     `**${preview.name}** will become an independent Private tour owned by you.`,
     '',`**Total stops:** ${preview.totalStops}`,`**Existing saved entries reused:** ${preview.reusedStops}`,`**Private copies created:** ${preview.copiedStops}`,
-    '', 'Later changes or revocation of the Share Pass will not alter your copied tour.',advisories
+    '', 'Favorite is a bookmark. Copying creates your own editable route; eligible existing houses are reused and Private entries are copied where needed. Reused houses keep their own visibility.', '', 'Revoking the Share Pass does not delete your independent route or its Private copies.',advisories
   ].join('\n')));
   return {embeds:[embed],components:buttonRows([
-    {customId:`hu:pass:tour:copyconfirm:${token}`,label:'Copy Private Tour',style:'success'},
+    {customId:`hu:pass:tour:copyconfirm:${token}`,label:'Create my Private tour copy',style:'success'},
     {customId:`hu:pass:tour:info:${token}`,label:'Cancel',style:'secondary'}
   ])};
 }
@@ -135,5 +135,5 @@ export function tourCopyPreviewPayload(preview,{token}={}){
 export function tourPassInformationPayload({tour,stops},{token}={}){
   const route=stops.length?stops.slice(0,20).map((stop,index)=>`${index+1}. ${destinationLabel({...stop,display_name:stop.custom_title||stop.display_name})}${stop.eso_owner?` — @${String(stop.eso_owner).replace(/^@/,'')}`:''}${houseCapacityText(stop)?' • '+houseCapacityText(stop):''}`).join('\n'):'No stops available.';
   const embed=new EmbedBuilder().setColor(0x2b7ddd).setTitle(discordTitle(`Tour Information — ${tour.name}`)).setDescription(discordDescription([tour.description||'A shared HearthBound housing tour.',`**Stops:** ${stops.length}`,'**Route**',route].join('\n\n')));
-  return {embeds:[embed],components:buttonRows([{customId:`hu:pass:tour:start:${token}`,label:'Start Self-Paced Tour',style:'success'},{customId:`hu:pass:tour:copy:${token}`,label:'Copy Tour to My Address Book',style:'secondary'}])};
+  return {embeds:[embed],components:buttonRows([{customId:`hu:pass:tour:start:${token}`,label:'Start Self-Paced Tour',style:'success'},{customId:`hu:pass:tour:copy:${token}`,label:'Make my own tour copy',style:'secondary'}])};
 }

@@ -13,7 +13,7 @@ document.querySelectorAll('[data-tour-cover]').forEach(panel=>{
   }
   const payload=new FormData(form);payload.set('action',action);
   const top=panel.querySelector('[data-tour-cover-dropzone]').getBoundingClientRect().top,controls=[...panel.querySelectorAll('input,button')],disabled=controls.map(el=>el.disabled);
-  saving=true;panel.setAttribute('aria-busy','true');controls.forEach(el=>el.disabled=true);message(action==='remove'?'Removing tour image…':action==='generate'?'Creating collage from tour houses…':'Uploading tour image…');
+  saving=true;panel.setAttribute('aria-busy','true');controls.forEach(el=>el.disabled=true);message(action==='remove'?'Removing tour image…':action==='generate'?'Creating collage from tour houses…':action==='restore'?'Restoring saved cover…':'Uploading tour image…');
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),120000);
   try{
    const response=await fetch(form.getAttribute('action'),{method:'POST',headers:{Accept:'application/json'},body:payload,signal:controller.signal});
@@ -30,7 +30,7 @@ document.querySelectorAll('[data-tour-cover]').forEach(panel=>{
   }finally{clearTimeout(timeout);saving=false;panel.removeAttribute('aria-busy');}
  }
  panel.addEventListener('change',event=>{if(event.target.matches('[data-tour-cover-upload] [type=file]'))save(event.target.closest('form'),'upload');});
- panel.addEventListener('submit',event=>{const form=event.target;if(!form.matches('[data-tour-cover-upload],[data-tour-cover-remove],[data-tour-cover-generate]'))return;event.preventDefault();const remove=form.matches('[data-tour-cover-remove]');if(remove&&!window.confirm('Remove this tour image?'))return;save(form,remove?'remove':form.matches('[data-tour-cover-generate]')?'generate':'upload');});
+ panel.addEventListener('submit',event=>{const form=event.target;if(!form.matches('[data-tour-cover-upload],[data-tour-cover-remove],[data-tour-cover-generate],[data-tour-cover-restore]'))return;event.preventDefault();const remove=form.matches('[data-tour-cover-remove]');if(remove&&!window.confirm('Remove this tour image?'))return;save(form,remove?'remove':form.matches('[data-tour-cover-generate]')?'generate':form.matches('[data-tour-cover-restore]')?'restore':'upload');});
  for(const name of ['dragenter','dragover'])panel.addEventListener(name,event=>{const zone=event.target.closest('[data-tour-cover-dropzone]');if(zone){event.preventDefault();zone.classList.add('is-dragging');}});
  for(const name of ['dragleave','drop'])panel.addEventListener(name,event=>event.target.closest('[data-tour-cover-dropzone]')?.classList.remove('is-dragging'));
  panel.addEventListener('drop',event=>{const zone=event.target.closest('[data-tour-cover-dropzone]');if(!zone)return;event.preventDefault();if(saving){message('An upload is in progress. Drop the next image when it finishes.');return;}if(event.dataTransfer.files.length!==1){message('Drop one image at a time.',true);return;}const form=zone.closest('form');form.querySelector('[type=file]').files=event.dataTransfer.files;save(form,'upload');});

@@ -20,7 +20,7 @@ export class TourCoverService{
   if(tour.automatic_owner&&String(row.created_by).startsWith('auto-owner:')&&row.created_by!==await currentOwnerCoverStamp(this.db,tour))return sharp(ownerTourArt(tour.automatic_owner,tour.eso_server)).webp({quality:90}).toBuffer();
   return readFile(this.filePath(row.storage_key));
  }
- async readForPass(context,token,passes){if(!/^[A-Za-z0-9_-]{32}$/.test(String(token)))throw Error('Tour cover is unavailable.');const c=await this.w.fresh(context),resolved=await passes.resolveTourPass(token,{userId:c.userId,guildId:c.guildId,esoServer:c.esoServer,recordUsage:false});return this.readBytes(resolved.tour);}
+ async readForPass(context,token,passes){if(!/^[A-Za-z0-9_-]{32}$/.test(String(token)))throw Error('Tour cover is unavailable.');const c=await this.w.fresh(context),resolved=await passes.resolveTourPass(token,{userId:c.userId,guildId:c.guildId,esoServer:c.esoServer,recordUsage:false,accessKind:'media'});return this.readBytes(resolved.tour);}
 
  async save(context,id,input){await this.access(context,id,true);const bytes=await normalizeUploadedImage(input);await this.replace(context,id,async()=>({bytes}),{upload:true});}
  async generate(context,id){return this.replace(context,id,(conn,c,tour)=>buildTourCollage(this.w,c,tour,conn));}

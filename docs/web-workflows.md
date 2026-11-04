@@ -134,3 +134,12 @@ Version 1.0.69 groups the home page around sharing a house, building a tour, exp
 House visit commands and official details start expanded. Favorite and visit controls appear near the top. Visible tour memberships include accessible registrations of the same physical ESO destination. Featured cards show descriptions and useful metadata. Comments show author and timestamp first, text directly below, then space before the next entry.
 
 Statistics numbers and ranking entries open exact, correctly scoped lists. Recent Activity’s People using HearthBound counts distinct Discord accounts recorded within 90 days from Discord or the web, not online presence; server, action and person filters combine. Numbered page controls and direct jumps preserve list filters. Support & Access retains setup, Server/Global requests, feedback and guide downloads; learning screens are retired.
+
+
+### Complete house information during a web tour
+
+The signed-in tour player, guest Global-tour player, and web Share Pass stops show the house cover first, followed by any additional screenshots and their captions. No empty image area is reserved when a house has no photos. Tour-specific notes remain separate from the house description.
+
+Each stop includes the official house name, ESO owner, platform/region, tags, maximum visitor capacity, and available catalog information such as size, zone, style and furnishing limits. Jump command, Housing Link and unfurnished-preview command are all expanded and copyable without leaving the stop. Favorite hearts and navigation keep their existing behavior.
+
+Share Pass screenshots recheck the live pass, its environment and its route membership on every image request. Revoked passes cannot load images; these images do not grant normal browsing or editing access and do not increase the pass usage count. Media requests use a separate bounded limit (nine times the configured Share Pass access limit in the same time window), so a gallery does not consume the navigation budget.

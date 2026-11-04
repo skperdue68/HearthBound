@@ -32,6 +32,8 @@ test('web tour stops expose photos, separate notes and description, links and ca
   const response=await fetch(base+path,options),html=await response.text();assert.equal(response.status,200);
   for(const text of ['Cover caption','Second view','Full house description','Look upstairs','Housing link','Unfurnished preview','Small Home','Bosmer','Zone','6 max'])assert.ok(html.includes(text),`${path} missing ${text}`);
   assert.match(html,/>cozy<\/span>/);assert.doesNotMatch(html,/>\[&quot;cozy/);
+  assert.ok(html.indexOf('Official house details')<html.indexOf('id="tour-stop-screenshots"'),'gallery follows catalog details');
+  assert.match(html,/data-gallery-image/);assert.match(html,/house-gallery.js/);
   assert.ok(html.indexOf('Cover caption')<html.indexOf('Full house description'),'cover comes before house information');
  }
  // Asset traffic uses a separate bounded bucket, leaving navigation available.

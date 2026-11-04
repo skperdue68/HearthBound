@@ -138,7 +138,7 @@ Statistics numbers and ranking entries open exact, correctly scoped lists. Recen
 
 ### Complete house information during a web tour
 
-The signed-in tour player, guest Global-tour player, and web Share Pass stops show the house cover first, followed by any additional screenshots and their captions. No empty image area is reserved when a house has no photos. Tour-specific notes remain separate from the house description.
+The signed-in tour player, guest Global-tour player, and web Share Pass stops show the house cover first. The screenshot gallery sits below the housing details; selecting a thumbnail opens the standard modal viewer with Previous/Next controls and a caption below the image. Arrow keys navigate, and Escape closes the viewer and returns focus to the thumbnail. No empty image area is reserved when a house has no photos. Tour-specific notes remain separate from the house description.
 
 Each stop includes the official house name, ESO owner, platform/region, tags, maximum visitor capacity, and available catalog information such as size, zone, style and furnishing limits. Jump command, Housing Link and unfurnished-preview command are all expanded and copyable without leaving the stop. Favorite hearts and navigation keep their existing behavior.
 

@@ -58,12 +58,27 @@ test('real browser personal saves, feedback review, tooltip, aligned controls an
   await evaluate(`document.querySelector('.tour-route-wrap').scrollIntoView({block:'start'})`);assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'),'route columns fit mobile viewport');if(process.env.POLISH_SCREENSHOT_DIR)await writeFile(join(process.env.POLISH_SCREENSHOT_DIR,'HearthBound-tour-route-columns-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,'base64'));
   await navigate('/app/tours');assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'),'tour list columns fit mobile');assert.ok(await evaluate(`(()=>{const rows=[...document.querySelectorAll('.tour-list-row')],x=rows[0].querySelector('.tour-list-cover').getBoundingClientRect().left;return rows.every(r=>Math.abs(r.querySelector('.tour-list-cover').getBoundingClientRect().left-x)<2)})()`),'mobile cover columns align');if(process.env.POLISH_SCREENSHOT_DIR)await writeFile(join(process.env.POLISH_SCREENSHOT_DIR,'HearthBound-tour-list-columns-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,'base64'));
   await navigate(`/app/tours/${tour.id}/edit`);assert.ok(await evaluate(`document.querySelector('#tour-stops textarea').getBoundingClientRect().width>=200`),'mobile stop notes remain usable');assert.equal(await evaluate(`document.querySelector('#tour-stops .house-list-thumbnail').target`),'_blank');assert.ok(await evaluate(`(()=>{const b=[...document.querySelectorAll('#tour-stops .stop>button')].map(el=>el.getBoundingClientRect());return b.every(r=>Math.abs(r.top-b[0].top)<2)})()`),'mobile stop controls share a row');assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'));
+  await svc.images.add(owner,house.id,await sharp({create:{width:600,height:400,channels:3,background:'#557744'}}).png().toBuffer(),'Second garden view');
   await svc.startTour(owner,tour.id);
   await navigate(`/app/tours/${tour.id}/play`);await wait(`document.querySelector('.tour-stop-cover img')?.naturalWidth>0`,'stop cover loaded');
   assert.ok(await evaluate(`(()=>{const image=document.querySelector('.tour-stop-cover img').getBoundingClientRect(),heading=document.querySelector('.tour-stop-photos+h3').getBoundingClientRect();return image.bottom<=heading.top&&image.width>250})()`),'cover is above the stop information');
   assert.ok(await evaluate(`document.querySelector('.house-visit').open&&document.querySelector('.house-metadata').open`),'visit links and catalog data are expanded');
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'),'tour stop stays within mobile viewport');
   if(process.env.POLISH_SCREENSHOT_DIR)await writeFile(join(process.env.POLISH_SCREENSHOT_DIR,'HearthBound-tour-stop-mobile.png'),Buffer.from((await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false})).data,'base64'));
+  const pass=await svc.actions.createPass(owner,'tour',tour.id);
+  for(const route of [`/app/tours/${tour.id}/play`,`/browse/tours/${tour.id}?stop=1`,`/app/shared/tour/${pass.token}`]){
+   // Guest browsing cannot display Server records; make the fixture public globally.
+   await db.query("UPDATE tours SET visibility='global',guild_id=NULL WHERE id=?",[tour.id]);await db.query("UPDATE saved_houses SET scope='global',guild_id=NULL WHERE id=?",[house.id]);
+   await navigate(route);await wait(`document.querySelectorAll('[data-gallery-image]').length===2`,'gallery thumbnails');
+   assert.ok(await evaluate(`document.querySelector('.house-metadata').compareDocumentPosition(document.querySelector('.house-gallery'))&Node.DOCUMENT_POSITION_FOLLOWING`),'gallery is below housing details');
+   await evaluate(`document.querySelector('[data-gallery-image]').click()`);await wait(`document.querySelector('.gallery-viewer')?.open&&document.querySelector('[data-viewer-image]').naturalWidth>0`,'modal image loads');
+   assert.equal(await evaluate(`document.querySelector('[data-viewer-prev]').disabled`),true);
+   await evaluate(`document.querySelector('[data-viewer-next]').click()`);await wait(`document.querySelector('[data-viewer-caption]').textContent.includes('Second garden view')`,'next caption');
+   assert.equal(await evaluate(`document.querySelector('[data-viewer-next]').disabled`),true);
+   await evaluate(`document.querySelector('[data-viewer-prev]').click()`);assert.ok(await evaluate(`document.querySelector('[data-viewer-caption]').textContent.includes('Garden cover')`));
+   await evaluate(`document.querySelector('.gallery-viewer').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
+   assert.ok(await evaluate(`!document.querySelector('.gallery-viewer').open&&document.activeElement===document.querySelector('[data-gallery-image]')`),'close restores focus to thumbnail');
+  }
   await call('Browser.close');ws.close();
  }finally{ws?.close();chrome.kill();await new Promise(r=>server.close(r));await closeDatabase(db);await rm(imageDir,{recursive:true,force:true});await rm(profile,{recursive:true,force:true,maxRetries:10,retryDelay:100});}
 });

@@ -23,8 +23,9 @@ export class SharePassService{
     if(!result.allowed)throw new Error(`Please wait ${Math.ceil(result.retryAfterMs/1000)} seconds before using another Share Pass.`);
   }
 
-  #consumeAccess(userId){
-    const result=this.rateLimiter.consume({bucket:'share-pass-access',userId,...this.settings.shareAccess});
+  #consumeAccess(userId,accessKind){
+    const media=accessKind==='media';
+    const result=this.rateLimiter.consume({bucket:media?'share-pass-media':'share-pass-access',userId,...this.settings.shareAccess,...(media?{limit:this.settings.shareAccess.limit*9}:{})});
     if(!result.allowed)throw new Error(`Please wait ${Math.ceil(result.retryAfterMs/1000)} seconds before opening another Share Pass screen.`);
   }
 
@@ -52,8 +53,8 @@ export class SharePassService{
     return one(this.db,'SELECT * FROM house_share_passes WHERE id=?',[Number(id)]);
   }
 
-  async resolveHousePass(token,{userId,guildId,esoServer}){
-    this.#consumeAccess(userId);
+  async resolveHousePass(token,{userId,guildId,esoServer,recordUsage=true,accessKind}){
+    this.#consumeAccess(userId,accessKind);
     const hash=this.tokens.hash(token),pass=await one(this.db,'SELECT * FROM house_share_passes WHERE token_hash=?',[hash]);
     if(!pass)throw new Error('This share card is no longer connected to an active pass.');
     if(pass.status!=='active')throw new Error(pass.revocation_reason==='environment_changed'?movedMessage:'This Share Pass was revoked by its owner.');
@@ -61,8 +62,10 @@ export class SharePassService{
     const access=await this.access.forHouse({userId,guildId,esoServer,savedHouseId:pass.saved_house_id,passId:pass.id});
     if(!access.environmentMatch)throw new Error(access.message);
     if(!access.canView)throw new Error('This share card is no longer connected to an active pass.');
+    if(recordUsage){
     await this.db.query('UPDATE house_share_passes SET usage_count=usage_count+1,last_used_at=CURRENT_TIMESTAMP WHERE id=?',[pass.id]);
     await this.#audit({guildId,actorId:userId,action:'house_pass_used',entityId:pass.id,details:{savedHouseId:pass.saved_house_id}});
+    }
     return {pass:await one(this.db,'SELECT * FROM house_share_passes WHERE id=?',[pass.id]),house:access.record,access};
   }
 
@@ -123,8 +126,8 @@ export class SharePassService{
     return one(this.db,'SELECT * FROM tour_share_passes WHERE id=?',[Number(id)]);
   }
 
-  async resolveTourPass(token,{userId,guildId,esoServer,recordUsage=true}){
-    this.#consumeAccess(userId);
+  async resolveTourPass(token,{userId,guildId,esoServer,recordUsage=true,accessKind}){
+    this.#consumeAccess(userId,accessKind);
     const hash=this.tokens.hash(token),pass=await one(this.db,'SELECT * FROM tour_share_passes WHERE token_hash=?',[hash]);
     if(!pass)throw new Error('This share card is no longer connected to an active pass.');
     if(pass.status!=='active')throw new Error(pass.revocation_reason==='environment_changed'?movedMessage:'This Share Pass was revoked by its owner.');

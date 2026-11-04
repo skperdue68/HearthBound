@@ -203,7 +203,18 @@ After setup, administrators can configure Server roles and review Server access 
 
 Tour builders can enter optional tour-specific notes directly on each draft stop, or when adding a house from its detail page. These notes guide visitors during that tour and never replace the house description. Save tour keeps stop order and notes together.
 
-House screenshots: open a house’s gallery on the web or select Screenshots in Discord. Add up to eight images with optional captions using the web upload form or `/hearth house:… screenshot:… caption:…` (also `/housing`). Only house editors can upload, choose the cover, or remove screenshots. Private images remain creator-only.
+House screenshots: add up to eight images with optional captions. Only the house submitter and administrators authorized to edit that house can upload or manage images; Private houses remain creator-only.
+
+In Discord, the easiest route is **View house → Screenshots → Add screenshot**. During a tour, editors can use **Add screenshot** directly on the current stop. The form names the selected house; choose one PNG, JPEG or WebP file (up to 5 MB), optionally enter a caption, and submit. HearthBound confirms the upload and shows the saved image in a private response. The original tour screen and stop remain unchanged. Screenshots belong to the house gallery, so they also appear on the web and in other tours using that registration. Captions can be edited later from Screenshots.
+
+For the slash-command route, `house` and `screenshot` are options on `/hearth`, not subcommands:
+
+1. Choose `/hearth`, then add the **house** option.
+2. Type the house nickname or ESO account owner and select a matching registered house.
+3. Add the **screenshot** option and choose your image. Add **caption** if desired.
+4. Send the command. `/housing` works identically.
+
+Example layout: `/hearth house: [select a house] screenshot: [choose a file] caption: Garden at night`. Do not type the bracketed instructions literally. The web gallery remains available for drag-and-drop uploads and rearranging images.
 
 House discovery uses descriptive cards with a favorite heart, View house and Add to tour actions. Basic Search also offers Compact list. Cards and pagination retain filters; tags open matching searches. My Address Book separates All saved, Favorites, Your registrations and Recently viewed, followed by created/favorite tours and organizing tools.
 

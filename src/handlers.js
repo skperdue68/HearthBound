@@ -1,6 +1,6 @@
 import {attachmentSafeInteraction} from './ui/message-attachments.js';
 import {WebWorkspaceService} from './services/web-workspace-service.js';
-import {discordHouseGallery,galleryContext,galleryCaptionModal} from './ui/house-gallery.js';
+import {discordHouseGallery,galleryContext,galleryCaptionModal,galleryUploadModal} from './ui/house-gallery.js';
 import { createHousingMenu } from './ui/housing-menu.js';
 import { IdentityService } from './services/identity-service.js';
 
@@ -28,13 +28,13 @@ export function createHandlers(db){
       await identities.syncInteraction(i);
       if(!['hearth','housing'].includes(i.commandName))return;
       const galleryHouse=i.options?.getString?.('house'),attachment=i.options?.getAttachment?.('screenshot');
-      if(galleryHouse||attachment){if(!/^\d+$/.test(galleryHouse||''))return i.reply({content:'Choose a registered house in the house option before adding a screenshot.',flags:64});return discordHouseGallery(workspace,i,{houseId:Number(galleryHouse),attachment,caption:i.options?.getString?.('caption')||''});}
+      if(galleryHouse||attachment){if(!/^\d+$/.test(galleryHouse||''))return i.reply({content:'To upload with /hearth: first add the house option, type the house nickname or ESO account owner, and select a result. Then add the screenshot option and choose your file (caption is optional). Example: /hearth house: [select your house] screenshot: [choose file]. Easier: open a house → Screenshots → Add screenshot, or use Add screenshot at a tour stop you can edit. /housing works the same way.',flags:64});return discordHouseGallery(workspace,i,{houseId:Number(galleryHouse),attachment,caption:i.options?.getString?.('caption')||''});}
       const result=await housingMenu.chat(i);
       await identities.refreshInternalNames();
       return result;
     },
-    async button(i){const caption=/^hu:gallery:edit-caption:(\d+):(\d+):(\d+)$/.exec(i.customId||'');if(caption)return dispatch(interaction=>galleryCaptionModal(workspace,interaction,{houseId:Number(caption[1]),imageId:Number(caption[2]),index:Number(caption[3])}),i);const gallery=/^hu:gallery:(?:(page|cover|remove):)?(\d+):(-?\d+)$/.exec(i.customId||'');if(gallery)return dispatch(interaction=>discordHouseGallery(workspace,interaction,{houseId:Number(gallery[2]),index:gallery[1]&&gallery[1]!=='page'?0:Number(gallery[3]),action:gallery[1]==='page'?null:gallery[1],imageId:gallery[1]&&gallery[1]!=='page'?Number(gallery[3]):null}),i);return dispatch(housingMenu.button,i);},
+    async button(i){const upload=/^hu:gallery:upload:(\d+)$/.exec(i.customId||'');if(upload)return dispatch(interaction=>galleryUploadModal(workspace,interaction,{houseId:Number(upload[1])}),i);const caption=/^hu:gallery:edit-caption:(\d+):(\d+):(\d+)$/.exec(i.customId||'');if(caption)return dispatch(interaction=>galleryCaptionModal(workspace,interaction,{houseId:Number(caption[1]),imageId:Number(caption[2]),index:Number(caption[3])}),i);const gallery=/^hu:gallery:(?:(page|cover|remove):)?(\d+):(-?\d+)$/.exec(i.customId||'');if(gallery)return dispatch(interaction=>discordHouseGallery(workspace,interaction,{houseId:Number(gallery[2]),index:gallery[1]&&gallery[1]!=='page'?0:Number(gallery[3]),action:gallery[1]==='page'?null:gallery[1],imageId:gallery[1]&&gallery[1]!=='page'?Number(gallery[3]):null}),i);return dispatch(housingMenu.button,i);},
     async select(i){ return dispatch(housingMenu.select,i); },
-    async modal(i){const caption=/^hu:gallery:caption:(\d+):(\d+):(\d+)$/.exec(i.customId||'');if(caption)return dispatch(interaction=>discordHouseGallery(workspace,interaction,{houseId:Number(caption[1]),imageId:Number(caption[2]),index:Number(caption[3]),action:'caption',caption:i.fields.getTextInputValue('caption')}),i);return dispatch(housingMenu.modal,i);}
+    async modal(i){const upload=/^hu:gallery:upload-submit:(\d+)$/.exec(i.customId||'');if(upload)return dispatch(interaction=>discordHouseGallery(workspace,interaction,{houseId:Number(upload[1]),action:'upload',attachment:interaction.fields.getUploadedFiles('screenshot')?.first(),caption:interaction.fields.getTextInputValue('caption')||''}),i);const caption=/^hu:gallery:caption:(\d+):(\d+):(\d+)$/.exec(i.customId||'');if(caption)return dispatch(interaction=>discordHouseGallery(workspace,interaction,{houseId:Number(caption[1]),imageId:Number(caption[2]),index:Number(caption[3]),action:'caption',caption:i.fields.getTextInputValue('caption')}),i);return dispatch(housingMenu.modal,i);}
   };
 }

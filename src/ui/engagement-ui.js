@@ -103,6 +103,7 @@ export function progressRunPayload({ item = null, tour = null, stops = [], curre
     ];
     const secondary=[];
     if(canEdit&&stop?.source_id!=null)secondary.push(button(`hu:progress:edit:${item.id}:${Number(stop.source_id)}:${detailState}${suffix}`,'Edit House',ButtonStyle.Secondary,false,'✏️'));
+    if(canEdit&&stop?.source_id!=null)secondary.push(button(`hu:gallery:upload:${Number(stop.source_id)}`,'Add screenshot',ButtonStyle.Success));
     secondary.push(button(`hu:progress:list:${item.id}:${detailState}${suffix}`,'Show Tour List'),button(`hu:progress:restart:${item.id}:${detailState}${suffix}`,'Restart'),button(backId,'Back',ButtonStyle.Secondary,false,'↩️'));
     return {embeds:[tourEmbed(tour,stops,position,commentCount,showDetails,{shared:false,leaderId:item.discord_user_id})],components:[row(primary),row(secondary)]};
   }

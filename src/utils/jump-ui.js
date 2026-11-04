@@ -20,5 +20,6 @@ export function tourButtonSpecs(tourId,commentCount=0,showDetails=false,{canEdit
     {customId:`tour:end:${tourId}`,label:'End Tour',style:'danger'}
   ];
   if(canEdit&&savedHouseId!=null)specs.splice(4,0,{customId:`tour:edit:${tourId}:${Number(savedHouseId)}:${detailState}`,label:'Edit House',style:'secondary',emoji:'✏️'});
+  if(canEdit&&savedHouseId!=null)specs.push({customId:`hu:gallery:upload:${Number(savedHouseId)}`,label:'Add screenshot',style:'success'});
   return specs;
 }

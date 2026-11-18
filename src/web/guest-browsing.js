@@ -3,6 +3,8 @@ import {houseTourLinks} from './house-tour-links.js';
 import {tourSections} from '../utils/tour-list-order.js';
 import {tourStopList} from './tour-stop-list.js';
 import {quickFilters,sortSelect} from './search-controls.js';
+import {readSearchQuery} from './search-params.js';
+import {filterValues} from '../utils/house-search-filters.js';
 import {previewExit} from './permission-preview.js';
 import {houseCardCover,guestFavoriteHeart} from './house-card-cover.js';
 import {GuestBrowseService} from '../services/guest-browse-service.js';
@@ -24,7 +26,7 @@ function tourCards(rows){return tourSections(rows).map(group=>`<section class="t
 export async function guestBrowsingRoute({request,response,url,workspace,send,redirect,preference=null,session=null}){
  if(!url.pathname.startsWith('/browse'))return null;
  if(request.method!=='GET'&&request.method!=='HEAD')return send(response,405,'Guest browsing is read-only.',{allow:'GET, HEAD'});
- const service=new GuestBrowseService(workspace),query=Object.fromEntries(url.searchParams);let environment=normalizeEsoServer(query.esoServer)||normalizeEsoServer(preference)||'pc_na';
+ const service=new GuestBrowseService(workspace),query=readSearchQuery(url.searchParams);let environment=normalizeEsoServer(query.esoServer)||normalizeEsoServer(preference)||'pc_na';
  const entry=/^\/browse\/(houses|tours)\/(\d+)(?:\/(images)\/(\d+)|\/(cover))?$/.exec(url.pathname);
  if(entry&&((entry[3]&&entry[1]!=='houses')||(entry[5]&&entry[1]!=='tours')))return send(response,404,'Image unavailable.');
  if(entry&&(entry[3]||entry[5])){try{const bytes=entry[3]?await service.houseImage(entry[2],entry[4]):await service.tourImage(entry[2]);return send(response,200,request.method==='HEAD'?'':bytes,{'content-type':'image/webp','cache-control':'private, no-store','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'"});}catch{return send(response,404,'Image unavailable.',{'cache-control':'private, no-store'});}}
@@ -33,7 +35,7 @@ export async function guestBrowsingRoute({request,response,url,workspace,send,re
  catch{return send(response,404,publicPage('Entry unavailable',`<section class="panel"><h1>Entry unavailable</h1><p>This item requires sign-in or is no longer available.</p><div class="actions">${linkButton('Browse Global houses','/browse/houses')}${linkButton('Sign in',login('/app'),'primary')}</div></section>`));}
  const cookie=`hearthbound_guest_environment=${environment}; SameSite=Lax; Path=/; Max-Age=31536000;${String(request.headers['x-forwarded-proto']||'')==='https'?' Secure;':''}`;
  const render=(title,body,returnTo='/app')=>{
-  const signIn=session?returnTo:login(returnTo),region=`<form class="filters guest-region" data-auto-submit action="${entry?'/browse/houses':escape(url.pathname)}" method="get"><label>Platform / region<select name="esoServer">${ESO_SERVERS.map(e=>`<option value="${e.value}" ${e.value===environment?'selected':''}>${escape(e.label)}</option>`).join('')}</select></label>${query.q?`<input type="hidden" name="q" value="${escape(query.q)}">`:''}${query.tag?`<input type="hidden" name="tag" value="${escape(query.tag)}">`:''}<noscript><button>Browse</button></noscript></form>`;
+  const signIn=session?returnTo:login(returnTo),region=`<form class="filters guest-region" data-auto-submit action="${entry?'/browse/houses':escape(url.pathname)}" method="get"><label>Platform / region<select name="esoServer">${ESO_SERVERS.map(e=>`<option value="${e.value}" ${e.value===environment?'selected':''}>${escape(e.label)}</option>`).join('')}</select></label>${query.q?`<input type="hidden" name="q" value="${escape(query.q)}">`:''}${filterValues(query.tag).map(value=>`<input type="hidden" name="tag" value="${escape(value)}">`).join('')}<noscript><button>Browse</button></noscript></form>`;
   const nav=`<nav class="library-navigation guest-navigation" aria-label="Guest navigation">${[['Discover','/browse'],['Houses','/browse/houses'],['Tours','/browse/tours'],['Random house','/browse/random']].map(([label,path])=>`<a href="${escape(href(path,environment))}">${label}</a>`).join('')}</nav>`;
   return send(response,200,publicPage(title,`<div class="notice guest-banner"><div><strong>${session?.permissionPreview==='guest'?'Previewing as Guest':'Browsing as a guest'}</strong><p>Explore Global homes and tours · ${escape(esoServerLabel(environment))}. Sign in to save favorites, comment, register houses, and manage tours.</p></div>${session?.permissionPreview==='guest'?previewExit(session):linkButton(session?'Return to signed-in view':'Sign in with Discord',signIn,'primary')}</div>${nav}${region}<h1>${escape(title)}</h1>${body}`,{signInHref:signIn,metadata:'<meta name="robots" content="noindex,follow">',extraScripts:['/assets/house-gallery.js','/assets/web-actions.js']}),{'set-cookie':cookie});
  };

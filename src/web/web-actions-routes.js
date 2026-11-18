@@ -118,7 +118,7 @@ export async function handleWebActions({request,url,session,context:c,workspace:
    if(form.get('tourId')){const draft=await w.getTourDraft(c,form.get('tourId'));if(draft.version!==form.get('version'))throw new Error('This tour changed. Reload the selection.');const saved=await w.saveTourDraft(c,{id:draft.tour.id,version:draft.version,stopIds:[...draft.stops.map(s=>s.saved_house_id),...ids.map(Number)]});return go(`/app/tours/${saved.id}?saved=1`);}
    const saved=await w.saveTourDraft(c,{details:{name:form.get('name'),visibility:form.get('visibility'),description:form.get('description')},stopIds:ids});return go(`/app/tours/${saved.id}?saved=1`);
   }
-  const tours=(await w.listTours(c)).filter(t=>t.canEdit);
+  const tours=(await w.listTours(c)).filter(t=>t.canEdit&&!t.automatic_owner);
   if(form.get('confirm')==='order'){
    const ids=form.get('all')==='yes'?[...available.keys()]:(form.get('orderedSelection')?form.get('orderedSelection').split(',').filter(Boolean):form.getAll('houseIds'));if(!ids.length||ids.length>250||ids.some(n=>!available.has(n)))throw new Error('Select between 1 and 250 accessible registered houses.');
    const draft=form.get('tourId')?await w.getTourDraft(c,form.get('tourId')):null;

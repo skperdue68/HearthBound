@@ -531,12 +531,13 @@ export function searchFiltersModal(token,filters={},includeNonPlayer=false){
   );
 }
 export function registrationTypePayload({backId='hu:home',defaultVisibility='public'}={}){
+  const name=defaultVisibility==='global'?'Global':defaultVisibility==='public'?'Server':'Private';
   const select=new StringSelectMenuBuilder().setCustomId('hu:register:type').setPlaceholder('Choose Global, Server, or Private').setMinValues(1).setMaxValues(1).addOptions(
-    {label:'Global',value:'global',description:'Share with Discord servers in the same ESO environment.'},
+    {label:'Global',value:'global',default:defaultVisibility==='global',description:'Share with Discord servers in the same ESO environment.'},
     {label:'Server',value:'public',default:defaultVisibility==='public',description:"Register this house in this Discord server's directory."},
     {label:'Private',value:'private',default:defaultVisibility==='private',description:'Save this house privately for your Discord account.'}
   );
-  return {embeds:[embed('➕ Register New House','Visibility defaults to **Server** when shared registration is allowed. Continue with the selected default, or choose another visibility below.')],components:[new ActionRowBuilder().addComponents(select),...buttonRows([{customId:`hu:register:continue:${defaultVisibility}`,label:`Continue with ${defaultVisibility==='public'?'Server':'Private'}`,style:'primary'},{customId:backId,label:'Back',style:'secondary',emoji:'↩️'}])]};
+  return {embeds:[embed('➕ Register New House',`**${name}** is selected by default. Continue with it, or choose another visibility below; your last choice is remembered for the rest of this session.`)],components:[new ActionRowBuilder().addComponents(select),...buttonRows([{customId:`hu:register:continue:${defaultVisibility}`,label:`Continue with ${name}`,style:'primary'},{customId:backId,label:'Back',style:'secondary',emoji:'↩️'}])]};
 }
 const visibilityName=value=>value==='global'?'Global':value==='public'||value==='server'?'Server':'Private';
 const registrationStatusName=value=>value==='pending'?'Awaiting Housing Moderator approval':'Active';
@@ -646,7 +647,7 @@ export function commentModal(scope,id,backId,label){ return new ModalBuilder().s
 
 export function tourDetailPayload(tour,stops,canEdit=false,navigation=null,featuredSource=null){
   const visibility=tour.scope==='global'?'Global Tour':tour.scope==='server'?'Server Tour':'Private Tour';
-  const e=embed(`🗺️ ${tour.name}`,tour.description||'Housing tour').addFields(
+  const e=embed(`🗺️ ${tour.name}`,tour.description?null:'Housing tour').addFields(
     {name:'Stops',value:String(stops.length),inline:true},
     {name:'Tour Visibility',value:visibility,inline:true}
   );
@@ -664,7 +665,9 @@ export function tourDetailPayload(tour,stops,canEdit=false,navigation=null,featu
       {customId:`hu:picker:return:${navigation.stateId}`,label:'Back to Tours',style:'secondary',emoji:'↩️'}
     );
   }
-  return {embeds:[e],components:buttonRows(specs)};
+  const embeds=[e];
+  if(tour.description)embeds.push(embed('📝 About this tour',String(tour.description).slice(0,4096)));
+  return {embeds,components:buttonRows(specs)};
 }
 export function tourManagePayload(tour,stops){
   const lines=tourRouteLines(stops);
@@ -716,10 +719,10 @@ export function tourEventEditModal(event, timezone = null, returnPage = 1){
   return new ModalBuilder().setCustomId(`hu:modal:event:edit:${event.id}${Number(returnPage)>1?`:${Math.floor(Number(returnPage))}`:''}`).setTitle('Edit Tour Event').addComponents(textField('title','Event title',{value:event.title,required:true,maxLength:EVENT_TITLE_MAX}),textField('date','Date (YYYY-MM-DD)',{value:date,required:true}),textField('time','Local time (e.g. 7:30 PM)',{value:time,required:true}),textField('description','Description (optional)',{value:event.description||'',paragraph:true,maxLength:EVENT_DESCRIPTION_MAX}));
 }
 export function featuredExpiryModal(targetKind,targetId){ return new ModalBuilder().setCustomId(`hu:modal:featured:expiry:${targetKind}:${targetId}`).setTitle('Featured Expiration').addComponents(textField('days','Days until expiration (0 = never)',{required:true})); }
-export function tourVisibilityPayload(token){ return {embeds:[embed('Create Tour — Tour Visibility','Who should be able to find and start this saved tour? Server is the default choice.\n\n**Global Tour:** Discord servers using the same ESO environment; Global Tours can contain Global Houses only.\n**Server Tour:** this Discord server; it can contain Global and Server Houses.\n**Private Tour:** only you; it can contain any house visible to you in this ESO environment.')],components:buttonRows([
-  {customId:`hu:tour:createvis:global:${token}`,label:'Global Tour',style:'secondary'},
-  {customId:`hu:tour:createvis:server:${token}`,label:'Server Tour',style:'primary'},
-  {customId:`hu:tour:createvis:personal:${token}`,label:'Private Tour',style:'secondary'},
+export function tourVisibilityPayload(token,remembered='server'){ const preferred=['global','server','personal'].includes(remembered)?remembered:'server',preferredName=preferred==='global'?'Global Tour':preferred==='server'?'Server Tour':'Private Tour',style=scope=>scope===preferred?'primary':'secondary'; return {embeds:[embed('Create Tour — Tour Visibility','Who should be able to find and start this saved tour? Server is the default choice.\n\n**Global Tour:** Discord servers using the same ESO environment; Global Tours can contain Global Houses only.\n**Server Tour:** this Discord server; it can contain Global and Server Houses.\n**Private Tour:** only you; it can contain any house visible to you in this ESO environment.\n\n**${preferredName}** is preselected from your last tour when available.')],components:buttonRows([
+  {customId:`hu:tour:createvis:global:${token}`,label:'Global Tour',style:style('global')},
+  {customId:`hu:tour:createvis:server:${token}`,label:'Server Tour',style:style('server')},
+  {customId:`hu:tour:createvis:personal:${token}`,label:'Private Tour',style:style('personal')},
   {customId:'hu:tours',label:'Cancel',style:'secondary'}
 ])}; }
 export function tourEditDetailsPayload(tour){

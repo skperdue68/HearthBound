@@ -5,13 +5,13 @@ import {resolve,join} from 'node:path';
 import {one,withTransaction} from '../db/database.js';
 
 export const HOUSE_IMAGE_LIMIT=8;
-export const HOUSE_IMAGE_BYTES=5*1024*1024;
+export const HOUSE_IMAGE_BYTES=10*1024*1024;
 const animatedPng=input=>{
  if(input.length<8||!input.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return false;
  for(let offset=8;offset+12<=input.length;){const length=input.readUInt32BE(offset);if(length>input.length-offset-12)break;if(input.toString('ascii',offset+4,offset+8)==='acTL')return true;offset+=length+12;}return false;
 };
 export async function normalizeUploadedImage(input){
-  if(!Buffer.isBuffer(input)||input.length>HOUSE_IMAGE_BYTES)throw new Error('Choose an image no larger than 5 MB.');
+  if(!Buffer.isBuffer(input)||input.length>HOUSE_IMAGE_BYTES)throw new Error('Choose an image no larger than 10 MB.');
   let bytes;
   try{if(animatedPng(input))throw new Error();const source=sharp(input,{limitInputPixels:40000000,failOn:'warning'}),meta=await source.metadata();if(!['png','jpeg','webp'].includes(meta.format)||Number(meta.pages||1)>1)throw new Error();bytes=await source.rotate().resize({width:1920,height:1920,fit:'inside',withoutEnlargement:true}).webp({quality:85}).toBuffer();}
   catch{throw new Error('Choose a valid, still PNG, JPEG or WebP screenshot (up to 40 megapixels).');}

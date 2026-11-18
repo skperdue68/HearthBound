@@ -8,11 +8,11 @@ Each tour has a generated 1200×630 HearthBound-style cover bearing the owner’
 
 - Global houses: one tour per owner and ESO platform/region.
 - Server houses: one tour per owner, Discord server and ESO platform/region.
-- Private houses: one tour per owner, private record owner and ESO platform/region. Other administrators cannot view these tours or their covers.
+- Private houses: no automatic owner tour. Private registrations stay out of owner tours entirely; only Global and Server houses are grouped.
 
 Pending, archived and unassigned houses are excluded. Duplicate registrations of the same owner/official house within a group appear once; the oldest eligible registration represents the destination. Routes sort alphabetically by house nickname or official name. Existing manual tours remain independent.
 
-Synchronization runs when the bot becomes ready and once per minute. Changes to the house owner, visibility, platform/region or status move stops into the appropriate group. New houses are added, unavailable houses are removed, and empty automatic tours are deleted. Unchanged stops retain their IDs and tour progress is handled by the existing self-paced tour controls.
+Synchronization runs when the bot becomes ready and once per minute. Changes to the house owner, visibility, platform/region or status move stops into the appropriate group. Changing a house to Private removes it from owner tours, and a tour is deleted once it has no Global or Server houses left. New houses are added, unavailable houses are removed, and empty automatic tours are deleted. Unchanged stops retain their IDs and tour progress is handled by the existing self-paced tour controls.
 
 Automatic tours are labeled and their route, creator, visibility and cover cannot be manually edited. Make a normal tour if you need a custom route or notes. Keep the source house registration up to date to change an automatic tour.
 

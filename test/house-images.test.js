@@ -18,7 +18,7 @@ test('gallery validates images, respects Private ownership, selects cover and re
  const image=await gallery.read(c,h.id,first.id);assert.equal((await sharp(image).metadata()).format,'webp');
  await assert.rejects(()=>gallery.list({...c,userId:'1'},h.id),/not available/);
  await assert.rejects(()=>gallery.add(c,h.id,Buffer.from('<svg onload="bad()"/>')),/PNG|JPEG|WebP/);
- await assert.rejects(()=>gallery.add(c,h.id,Buffer.alloc(5*1024*1024+1)),/5 MB/);
+ await assert.rejects(()=>gallery.add(c,h.id,Buffer.alloc(10*1024*1024+1)),/10 MB/);
  await assert.rejects(()=>gallery.add(c,h.id,animatedPng(png)),/still PNG/);
  await gallery.remove(c,h.id,first.id);assert.equal((await readdir(dir)).length,1);
  for(let n=1;n<8;n++)await gallery.add(c,h.id,png);await assert.rejects(()=>gallery.add(c,h.id,png),/eight/);

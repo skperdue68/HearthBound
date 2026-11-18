@@ -11,9 +11,9 @@ export async function galleryContext(workspace,i){
 }
 async function attachmentBytes(attachment,fetchImpl){
  const url=new URL(attachment.url);if(url.protocol!=='https:'||!['cdn.discordapp.com','media.discordapp.net'].includes(url.hostname)||!url.pathname.startsWith('/attachments/'))throw new Error('Use a screenshot attached directly to Discord.');
- if(Number(attachment.size)>HOUSE_IMAGE_BYTES)throw new Error('Choose an image no larger than 5 MB.');
+ if(Number(attachment.size)>HOUSE_IMAGE_BYTES)throw new Error('Choose an image no larger than 10 MB.');
  const response=await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error('Discord could not supply that attachment. Upload it again.');
- const chunks=[];let size=0;for await(const chunk of response.body){size+=chunk.length;if(size>HOUSE_IMAGE_BYTES){throw new Error('Choose an image no larger than 5 MB.');}chunks.push(chunk);}return Buffer.concat(chunks);
+ const chunks=[];let size=0;for await(const chunk of response.body){size+=chunk.length;if(size>HOUSE_IMAGE_BYTES){throw new Error('Choose an image no larger than 10 MB.');}chunks.push(chunk);}return Buffer.concat(chunks);
 }
 export async function discordHouseGallery(workspace,i,{houseId,index=0,attachment=null,caption='',action=null,imageId=null,fetchImpl=fetch}={}){
  if((action&&action!=='upload')||String(i.customId||'').startsWith('hu:gallery:page:'))await i.deferUpdate();else await i.deferReply({flags:MessageFlags.Ephemeral});
@@ -51,7 +51,7 @@ export async function galleryUploadModal(workspace,i,{houseId}){
   const file=new FileUploadBuilder().setCustomId('screenshot').setMinValues(1).setMaxValues(1).setRequired(true);
   const caption=new TextInputBuilder().setCustomId('caption').setStyle(TextInputStyle.Paragraph).setMaxLength(250).setRequired(false).setPlaceholder('Describe this view (optional)');
   return i.showModal(new ModalBuilder().setCustomId(`hu:gallery:upload-submit:${Number(houseId)}`).setTitle('Add house screenshot').addLabelComponents(
-   new LabelBuilder().setLabel(String(h.display_name||h.house_name).slice(0,45)).setDescription('This house is selected. PNG, JPEG or WebP, up to 5 MB.').setFileUploadComponent(file),
+   new LabelBuilder().setLabel(String(h.display_name||h.house_name).slice(0,45)).setDescription('This house is selected. PNG, JPEG or WebP, up to 10 MB.').setFileUploadComponent(file),
    new LabelBuilder().setLabel('Caption (optional)').setTextInputComponent(caption)
   ));
  }catch(error){return i.reply({content:error.message,flags:MessageFlags.Ephemeral,allowedMentions:{parse:[]}});}

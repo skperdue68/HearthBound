@@ -12,6 +12,6 @@ After merging the preceding UI polish PR and this fix, pull master and restart h
 
 ## Upload a screenshot in Discord
 
-Select `/hearth` (or `/housing`) from Discord’s slash-command menu. Add the **house** option, search for a registered house and select it. Add **screenshot** to choose a PNG, JPEG or WebP file up to 5 MB; **caption** is optional. Submit the command to upload. Existing editing permissions apply.
+Select `/hearth` (or `/housing`) from Discord’s slash-command menu. Add the **house** option, search for a registered house and select it. Add **screenshot** to choose a PNG, JPEG or WebP file up to 10 MB; **caption** is optional. Submit the command to upload. Existing editing permissions apply.
 
 If the house/screenshot/caption options are missing after an upgrade, the application’s command definitions need to be registered with Discord again. Run the existing command-registration procedure with the installation’s intended global/guild settings; restarting the Node service alone does not register changed options. Reload Discord if it continues to display cached command fields.

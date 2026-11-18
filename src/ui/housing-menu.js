@@ -224,7 +224,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     }
     return true;
   }
-  const visibleTours=(i,{forManagement=false}={})=>tours.list({creatorId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),includeOtherServers:forManagement&&isGlobalTourAdmin(i)});
+  const visibleTours=(i,{forManagement=false}={})=>tours.list({creatorId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),includeOtherServers:forManagement&&isGlobalTourAdmin(i)}).then(rows=>tours.withStopCounts(rows));
   const scopePreferenceKey=i=>`${i.user.id}:${guilds.getEsoServer(i.guildId)}`;
   const rememberedScope=(i,kind)=>{const entry=scopePreferences.get(scopePreferenceKey(i));return entry?.[kind]||null;};
   const rememberScope=(i,kind,value)=>{if(!value)return;const key=scopePreferenceKey(i),entry=scopePreferences.get(key)||{};entry[kind]=value;scopePreferences.set(key,entry);};
@@ -302,12 +302,13 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
   }
   function pickerDescription(kind,r){const description=pickerDescriptionBody(kind,r),capacity=houseCapacityText(r);return capacity?[capacity,description].filter(Boolean).join(' • '):description;}
   function pickerDescriptionBody(kind,r){
-    if(kind==='admin-legacy-tour')return `${r.visibility==='global'?'Global':'Server'} • Creator: ${r.creator_display_name||r.creator_global_name||r.creator_id||'Unknown'}`;
+    const stopCount=`${Number(r.stop_count)||0} stop${Number(r.stop_count)===1?'':'s'}`;
+    if(kind==='admin-legacy-tour')return `${r.visibility==='global'?'Global':'Server'} • ${stopCount} • Creator: ${r.creator_display_name||r.creator_global_name||r.creator_id||'Unknown'}`;
     if(kind==='featured-house')return [r.house_name,r.zone,r.scope==='global'?'Global':'Server'].filter(Boolean).join(' • ');
     if(kind==='featured-tour')return r.description||undefined;
     if(kind.startsWith('tour-stop'))return [r.house_name,r.zone].filter(Boolean).join(' • ');
     if(kind==='tour-add-house')return [r.house_name,r.zone,r.source==='personal'?'Private':r.source==='global'?'Global':'Server'].filter(Boolean).join(' • ');
-    if(kind.startsWith('tour'))return r.description||undefined;
+    if(kind.startsWith('tour'))return [stopCount,r.description].filter(Boolean).join(' • ');
     if(kind==='house-form')return [r.zone,r.house_type,r.classification].filter(Boolean).join(' • ');
     if(kind==='advanced-owner')return 'ESO owner';
     if(kind==='advanced-name'){
@@ -1162,7 +1163,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:my:tours'){
       const created=await myAddressBook.tours(i.user.id,guilds.getEsoServer(i.guildId)),savedTours=await tourFavorites.list({...contextFor(i),memberRoleIds:[...(i.member?.roles?.cache?.keys?.()||[])]});const rows=[...new Map([...created,...savedTours].filter(t=>contentPolicy.canViewTour(t,contextFor(i))).map(t=>[Number(t.id),{...t,scope:t.visibility==='private'?'personal':t.visibility==='public'?'server':'global'}])).values()].sort((a,b)=>a.name.localeCompare(b.name));
       if(!rows.length)return i.update({...await dashboard(i),content:'You have not created or favorited any tours yet.'});
-      return i.update(createPicker(i,{kind:'tour-view',rows,extra:{title:'🗺️ Created & saved tours',description:`You have created or favorited ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
+      return i.update(createPicker(i,{kind:'tour-view',rows:await tours.withStopCounts(rows),extra:{title:'🗺️ Created & saved tours',description:`You have created or favorited ${rows.length} tour${rows.length===1?'':'s'}.`},backId:'hu:my'}));
     }
     if(id==='hu:my:pending')return i.update(myPendingPayload(await myAddressBook.pending(i.user.id,guilds.getEsoServer(i.guildId),i.guildId)));
     if(id==='hu:my:recent'){
@@ -1518,7 +1519,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id==='hu:admin:otherroles'){ if(!isAdmin(i))return i.reply({content:'You do not have access to Housing administration.',flags:MessageFlags.Ephemeral}); return i.update(adminOtherRolesPayload(guilds.getSettings(i.guildId))); }
     if(id==='hu:admin:legacy-tours'){
       if(!isAdmin(i))return i.reply({content:'You do not have Housing administration access.',flags:MessageFlags.Ephemeral});
-      const rows=await environments.listGuildLegacyTours({guildId:i.guildId});
+      const rows=await tours.withStopCounts(await environments.listGuildLegacyTours({guildId:i.guildId}));
       if(!rows.length)return i.update({...adminPayload(guilds.getSettings(i.guildId)),content:'There are no recoverable Server or Global legacy tours linked to this Discord server.'});
       return i.update(createPicker(i,{kind:'admin-legacy-tour',rows,extra:{title:'🧭 Legacy Tours',description:'Choose an Unassigned Server or Global tour linked to this Discord server. Private tours remain visible only to their creators.'},backId:'hu:admin'}));
     }

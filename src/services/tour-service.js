@@ -71,6 +71,7 @@ export class TourService{
     const rows=await this.db.query(`SELECT * FROM tours WHERE eso_server=? ${visibility} ORDER BY lower(name),name,id`,includeOtherServers?[server,creatorId]:[server,creatorId,guildId]);
     return orderTours(rows).map(r=>({...r,scope:legacyScope(r.visibility)}));
   }
+  async withStopCounts(rows=[]){const ids=[...new Set(rows.map(r=>Number(r.id)).filter(id=>id>0))];if(!ids.length)return rows;const counts=await this.db.query(`SELECT tour_id,count(*) c FROM tour_stops WHERE tour_id IN (${ids.map(()=>'?').join(',')}) GROUP BY tour_id`,ids),byId=new Map(counts.map(r=>[Number(r.tour_id),Number(r.c)]));return rows.map(r=>({...r,stop_count:byId.get(Number(r.id))||0}));}
   async searchVisible({creatorId,guildId,esoServer,name}){const server=requireEsoServer(esoServer),q=String(name??'').trim().toLowerCase(),rows=await this.db.query(`SELECT * FROM tours WHERE eso_server=? AND ((visibility='private' AND creator_id=?) OR (visibility='public' AND guild_id=?) OR visibility='global') ${q?'AND lower(name) LIKE ?':''} ORDER BY lower(name),name,id`,q?[server,creatorId,guildId,`%${q}%`]:[server,creatorId,guildId]);return orderTours(rows).map(r=>({...r,scope:legacyScope(r.visibility)}));}
   async visibleForHouse(savedHouseId,{creatorId,guildId,esoServer}){const server=requireEsoServer(esoServer);return this.db.query(`SELECT DISTINCT t.id,t.name,t.visibility
     FROM tour_stops ts JOIN tours t ON t.id=ts.tour_id

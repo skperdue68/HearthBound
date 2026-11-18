@@ -5,6 +5,7 @@ import {tourContinueControls} from './tour-progress-controls.js';
 import {tourStopList} from './tour-stop-list.js';
 import {houseTable} from './house-table.js';
 import {quickFilters,resultsToolbar} from './search-controls.js';
+import {readSearchQuery} from './search-params.js';
 import {houseCapacityBadge} from './house-capacity.js';
 import {tourCoverHero,tourCoverMarkup,tourCoverThumbnail} from './tour-cover.js';
 import {tourLinkMarkup} from './tour-links.js';
@@ -57,7 +58,7 @@ export async function handleWorkspaceRoute({request,response,url,session,context
  if(usageKindOverride!==undefined)kind=usageKindOverride;if(usageKindOverride==='used_personal')target=null;
  if(kind)await w.usage.tryRecord({eventKey:`web:${c.userId}:${eventKey}`,kind,actor:{id:c.userId,name:session.global_name||session.username||'A member'},originGuildId:c.guildId,originGuildName:c.guildName,esoServer:c.esoServer,source:'web',target});};
  send=async(...args)=>{await record(args[1]);return baseSend(...args);};redirect=async(...args)=>{await record(302,args[1]);return baseRedirect(...args);};
- const path=url.pathname,query=Object.fromEntries(url.searchParams),render=(title,body,active='home',status=200)=>send(response,status,renderWorkspace({title,body,user:session,context:c,active,csrf:session.csrf}));
+ const path=url.pathname,query=readSearchQuery(url.searchParams),render=(title,body,active='home',status=200)=>send(response,status,renderWorkspace({title,body,user:session,context:c,active,csrf:session.csrf}));
  const cookieValue=name=>String(request.headers?.cookie||'').split(';').map(item=>item.trim()).find(item=>item.startsWith(name+'='))?.slice(name.length+1)||null;
  const rememberedScope=kind=>{const value=decodeURIComponent(cookieValue(`hearthbound_${kind}_scope`)||'');return ['private','public','global'].includes(value)?value:null;};
  const rememberScope=(kind,value)=>{if(!['private','public','global'].includes(value))return;const header=`hearthbound_${kind}_scope=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;if(typeof response.getHeader!=='function'||typeof response.setHeader!=='function')return;const current=response.getHeader('set-cookie');response.setHeader('set-cookie',current?[...(Array.isArray(current)?current:[current]),header]:header);};

@@ -11,6 +11,7 @@ import {WebActionsService} from './web-actions-service.js';
 import {HouseCatalogService} from './house-catalog-service.js';
 import {CommunityStatisticsService} from './community-statistics-service.js';
 import {normalizeAccount} from '../utils/eso.js';
+import {filterValues} from '../utils/house-search-filters.js';
 import {createHash} from 'node:crypto';
 import {TourService} from './tour-service.js';
 import {TourProgressService} from './tour-progress-service.js';
@@ -33,7 +34,7 @@ export class WebWorkspaceService{
   const rows=await this.db.query(`SELECT s.id,s.house_id,s.scope,s.guild_id,s.owner_user_id,s.display_name,s.eso_owner,s.tags,h.name catalog_house_name,h.zone,h.classification,h.house_type,h.style,h.population_limit,h.population_limit_plus FROM saved_houses s JOIN houses h ON h.house_id=s.house_id WHERE s.eso_server=? AND s.status='active' AND (s.scope='global' OR (s.scope='public' AND s.guild_id=?) OR (s.scope='private' AND s.owner_user_id=?))`,[c.esoServer,c.guildId,c.userId]);
   return (await this.withHouseCovers(withCatalogHouseNames(rows))).sort((a,b)=>tourNameOrder.compare(a.display_name||a.house_name,b.display_name||b.house_name)||Number(a.id)-Number(b.id));
  }
- async listHouses(c,{q='',scope='',page=1,personal=false,houseId='',ownerExact='',sort='az',zone='',style='',classification='',tag=''}={}){
+ async listHouses(c,{q='',scope='',page=1,personal=false,houseId='',ownerExact='',sort='az',zone=[],style=[],classification=[],tag=[]}={}){
   const clauses=['s.eso_server=?'],args=[c.esoServer];
   if(personal){clauses.push("s.status='active' AND ((s.scope='private' AND s.owner_user_id=?) OR (s.scope<>'private' AND s.created_by=? AND (s.scope='global' OR s.guild_id=?)))");args.push(c.userId,c.userId,c.guildId);}
   else{clauses.push("s.status='active' AND (s.scope='global' OR (s.scope='public' AND s.guild_id=?) OR (s.scope='private' AND s.owner_user_id=?))");args.push(c.guildId,c.userId);}
@@ -41,8 +42,8 @@ export class WebWorkspaceService{
   if(scope==='shared'){clauses.push("s.scope IN ('public','global')");}
   if(houseId!==''){clauses.push('s.house_id=?');args.push(Number(houseId)||0);}
   if(ownerExact!==''){clauses.push('s.normalized_owner=?');args.push(normalizeAccount(ownerExact));}
-  for(const [column,value] of [['zone',zone],['style',style],['classification',classification]])if(value){clauses.push(`lower(coalesce(h.${column},''))=?`);args.push(String(value).trim().toLowerCase());}
-  if(tag){clauses.push("lower(coalesce(s.tags,'')) LIKE ? ESCAPE '!'");const token=JSON.stringify(String(tag).trim()).toLowerCase().replace(/[!%_]/g,c=>'!'+c);args.push('%'+token+'%');}
+  for(const [column,values] of [['zone',zone],['style',style],['classification',classification]]){const selected=filterValues(values);if(selected.length){clauses.push(`lower(coalesce(h.${column},'')) IN (${selected.map(()=>'?').join(',')})`);args.push(...selected.map(value=>value.toLowerCase()));}}
+  const tags=filterValues(tag);if(tags.length){clauses.push(`(${tags.map(()=>"lower(coalesce(s.tags,'')) LIKE ? ESCAPE '!'" ).join(' OR ')})`);for(const value of tags)args.push('%'+JSON.stringify(value).toLowerCase().replace(/[!%_]/g,c=>'!'+c)+'%');}
   if(q){clauses.push("(lower(h.name) LIKE ? OR lower(coalesce(s.display_name,'')) LIKE ? OR lower(s.eso_owner) LIKE ? OR lower(coalesce(h.zone,'')) LIKE ?)");const term=`%${String(q).slice(0,200).toLowerCase()}%`;args.push(term,term,term,term);}
   const where=clauses.join(' AND '),total=Number((await one(this.db,`SELECT count(*) c FROM saved_houses s JOIN houses h ON h.house_id=s.house_id WHERE ${where}`,args)).c),p=pageWindow(page,total).page;
   const rows=await this.db.query(`SELECT s.*,h.name catalog_house_name,h.zone,h.classification,h.house_type,h.style,h.population_limit,h.population_limit_plus FROM saved_houses s JOIN houses h ON h.house_id=s.house_id WHERE ${where} ORDER BY ${sort==='newest'?'s.created_at DESC,':sort==='favorites'?"(SELECT count(*) FROM user_house_states us WHERE us.target_kind='destination' AND us.target_id=s.destination_id AND us.is_favorite=1) DESC,":''}lower(coalesce(s.display_name,h.name)),s.id LIMIT 25 OFFSET ?`,[...args,(p-1)*25]);

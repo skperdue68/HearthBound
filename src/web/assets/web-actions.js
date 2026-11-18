@@ -65,5 +65,9 @@ document.querySelectorAll('[data-feedback-id]').forEach(card=>{
 
 document.querySelectorAll('[data-search-controls] select').forEach(select=>select.addEventListener('change',()=>select.form.requestSubmit()));
 
+// Multi-value filters apply on each checkbox change and via the chip remove button.
+document.querySelectorAll('[data-search-controls] input[type="checkbox"]').forEach(box=>box.addEventListener('change',()=>box.form?.requestSubmit()));
+document.querySelectorAll('[data-remove-filter]').forEach(button=>button.addEventListener('click',()=>{const form=button.closest('form'),box=form?document.getElementById(button.dataset.removeFilter):null;if(!box||box.form!==form)return;box.checked=false;form.requestSubmit();}));
+
 // Select-only preferences apply on change; their native GET/POST forms remain usable without JavaScript.
 document.querySelectorAll('form[data-auto-submit] select').forEach(select=>select.addEventListener('change',()=>select.form.requestSubmit()));

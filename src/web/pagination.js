@@ -1,9 +1,10 @@
 import {pageWindow} from '../utils/pagination.js';
 import {escape} from './render.js';
+import {queryParams} from './search-params.js';
 export function pagination({page=1,total=0,pageSize=25,path,params={},pageParam='page',anchor='',label='Pagination'}){
  const {total:count,pages,page:current}=pageWindow(page,total,pageSize);
  if(pages===1)return `<div class="pagination"><span>${count} records</span></div>`;
- const query=new URLSearchParams(params);query.delete(pageParam);
+ const query=queryParams(params);query.delete(pageParam);
  const href=number=>{const next=new URLSearchParams(query);next.set(pageParam,number);return `${path}?${next}${anchor?'#'+encodeURIComponent(anchor):''}`;};
  const link=(label,number)=>`<a class="button secondary" href="${escape(href(number))}">${label}</a>`;
  const numbers=[...new Set([1,pages,...Array.from({length:5},(_,i)=>current+i-2).filter(n=>n>=1&&n<=pages)])].sort((a,b)=>a-b);

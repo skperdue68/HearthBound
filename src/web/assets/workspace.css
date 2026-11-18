@@ -142,3 +142,23 @@ a.pill,a.pill:hover,a.pill:focus-visible{text-decoration:none}a.pill:hover{filte
 [data-tour-cover-submit][hidden],[data-tour-cover-upload-actions][hidden],.tour-cover-toast[hidden]{display:none!important}.tour-cover-toast{position:fixed;z-index:1000;right:24px;bottom:24px;max-width:min(420px,calc(100vw - 32px));padding:16px 20px;border:1px solid #5eaa86;border-radius:10px;background:#173e32;color:#effff4;font-size:14px;font-weight:600;line-height:1.5;box-shadow:0 8px 30px #0007;pointer-events:none;overflow-wrap:anywhere}.tour-cover-toast.is-error{background:#572b39;border-color:#d68b9b;color:#fff2f4}@media(max-width:700px){.tour-cover-toast{right:16px;bottom:16px}}
 
 .tour-stop-photos{margin:1rem 0 1.5rem}.tour-stop-photos figure{margin:0}.tour-stop-photos img{display:block;width:100%;height:auto;max-height:65vh;object-fit:contain;border-radius:12px;background:var(--bg,#0c1625)}.tour-stop-photos figcaption{padding:.5rem 0;color:var(--muted,#abc0d8)}.tour-stop-photos .gallery-grid{margin-top:1rem}.tour-stop-photos .gallery-grid img{aspect-ratio:16/10;object-fit:cover}
+
+/* House attribute filters: a dropdown of checkboxes plus a removable chip line. */
+.quick-search-filters{align-items:start}
+.filter-dropdown{position:relative;min-width:0}
+.filter-dropdown>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:10px 12px;border:1px solid #47617f;border-radius:7px;background:#0f1d31;color:var(--hb-text);font-size:13px;font-weight:500;cursor:pointer;list-style:none}
+.filter-dropdown>summary::-webkit-details-marker{display:none}
+.filter-dropdown>summary::after{content:'▾';color:var(--hb-muted);font-size:11px}
+.filter-dropdown[open]>summary{border-color:var(--hb-focus);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:auto;border-radius:999px;background:var(--hb-gold);color:#172238;font-size:11px;font-weight:700}
+.filter-options{position:absolute;z-index:40;left:0;right:0;top:calc(100% - 1px);max-height:280px;overflow:auto;padding:8px;border:1px solid #47617f;border-radius:0 0 8px 8px;background:#111f35;box-shadow:0 14px 30px #0006}
+.filter-option{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:6px;font-size:12px;font-weight:500;color:var(--hb-text);cursor:pointer}
+.filter-option:hover{background:#1b2f4a}
+.filter-option input{margin:0;accent-color:var(--hb-gold)}
+.filter-option span{overflow-wrap:anywhere}
+.filter-chips{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:30px}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 10px;border:1px solid #53698d;border-radius:999px;background:#263953;color:#eef3fb;font-size:12px}
+.filter-chip-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hb-muted)}
+.filter-chip-remove{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;min-height:22px;padding:0;border:0;border-radius:50%;background:#0f1d31;color:#dbe6f5;font-size:15px;line-height:1}
+.filter-chip-remove:hover{background:#8c3548;color:#fff}
+@media(max-width:700px){.filter-options{position:static;max-height:none;margin-top:6px;border-radius:8px;box-shadow:none}.filter-chips{min-height:0}}

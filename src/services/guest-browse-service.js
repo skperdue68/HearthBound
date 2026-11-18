@@ -4,16 +4,17 @@ import {one} from '../db/database.js';
 import {pageWindow} from '../utils/pagination.js';
 import {requireEsoServer,normalizeEsoServer} from '../utils/eso-server.js';
 import {withCatalogHouseNames} from '../utils/query-results.js';
+import {filterValues} from '../utils/house-search-filters.js';
 
 // This deliberately has no member context or mutation API. Public reads always
 // recheck the current record, including every image and individual tour stop.
 export class GuestBrowseService{
  constructor(workspace){this.w=workspace;this.db=workspace.db;}
- async houses(environment,{q='',tag='',page=1,sort='az',zone='',style='',classification=''}={}){
+ async houses(environment,{q='',tag=[],page=1,sort='az',zone=[],style=[],classification=[]}={}){
   const args=[requireEsoServer(environment)],where=["s.scope='global'","s.status='active'",'s.eso_server=?'];
   if(q){where.push("(lower(coalesce(s.display_name,'')) LIKE ? OR lower(h.name) LIKE ? OR lower(s.eso_owner) LIKE ? OR lower(coalesce(h.zone,'')) LIKE ?)");args.push(...Array(4).fill('%'+String(q).slice(0,200).toLowerCase()+'%'));}
-  for(const [column,value] of [['zone',zone],['style',style],['classification',classification]])if(value){where.push(`lower(coalesce(h.${column},''))=?`);args.push(String(value).trim().toLowerCase());}
-  if(tag){where.push("lower(coalesce(s.tags,'')) LIKE ? ESCAPE '!'");const token=JSON.stringify(String(tag).trim()).toLowerCase().replace(/[!%_]/g,c=>'!'+c);args.push('%'+token+'%');}
+  for(const [column,values] of [['zone',zone],['style',style],['classification',classification]]){const selected=filterValues(values);if(selected.length){where.push(`lower(coalesce(h.${column},'')) IN (${selected.map(()=>'?').join(',')})`);args.push(...selected.map(value=>value.toLowerCase()));}}
+  const tags=filterValues(tag);if(tags.length){where.push(`(${tags.map(()=>"lower(coalesce(s.tags,'')) LIKE ? ESCAPE '!'" ).join(' OR ')})`);for(const value of tags)args.push('%'+JSON.stringify(value).toLowerCase().replace(/[!%_]/g,c=>'!'+c)+'%');}
   const from=`FROM saved_houses s JOIN houses h ON h.house_id=s.house_id WHERE ${where.join(' AND ')}`,total=Number((await one(this.db,`SELECT count(*) n ${from}`,args)).n),window=pageWindow(page,total);
   const rows=withCatalogHouseNames(await this.db.query(`SELECT s.id,s.destination_id,s.display_name,s.eso_owner,s.house_id,s.eso_server,s.description,s.tags,h.name catalog_house_name,h.zone,h.classification,h.style,h.population_limit,(SELECT i.id FROM house_images i WHERE i.saved_house_id=s.id ORDER BY i.position,i.id LIMIT 1) cover_image_id ${from} ORDER BY ${sort==='newest'?'s.created_at DESC,':sort==='favorites'?"(SELECT count(*) FROM user_house_states us WHERE us.target_kind='destination' AND us.target_id=s.destination_id AND us.is_favorite=1) DESC,":''}lower(coalesce(s.display_name,h.name)),s.id LIMIT 25 OFFSET ?`,[...args,window.offset]));
   return {rows:await withHouseTours(this.w,{esoServer:environment},rows,{guest:true}),total,page:window.page};

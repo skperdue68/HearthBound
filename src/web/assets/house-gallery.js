@@ -43,7 +43,7 @@ document.querySelectorAll('.house-gallery').forEach(gallery=>{
  const selected=()=>{
   if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}preview.hidden=true;input.setCustomValidity('');
   if(form.dataset.full==='true'){message('Gallery full. Remove an image before adding another.',true);return;}const file=input.files[0];if(!file){message('');return;}
-  const error=file.size>5*1024*1024?'Choose an image no larger than 5 MB.':file.size===0?'The selected file is empty.':file.type&&!['image/png','image/jpeg','image/webp'].includes(file.type)?'Choose a PNG, JPEG or WebP screenshot.':'';
+  const error=file.size>10*1024*1024?'Choose an image no larger than 10 MB.':file.size===0?'The selected file is empty.':file.type&&!['image/png','image/jpeg','image/webp'].includes(file.type)?'Choose a PNG, JPEG or WebP screenshot.':'';
   input.setCustomValidity(error);if(error){message(error,true);return;}
   previewUrl=URL.createObjectURL(file);preview.src=previewUrl;preview.hidden=false;message(`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB selected`);if(gallery.dataset.saving){form.dataset.queued='true';message('Screenshot selected. Upload will start when the current gallery change finishes.');return;}form.requestSubmit();
  };

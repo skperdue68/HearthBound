@@ -136,6 +136,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
   const commentReaders=new Map();
   const activeAdvancedByUser=new Map();
   const surpriseStates=new Map();
+  const scopePreferences=new Map();
 
   const isAdmin=i=>!!i.guildId&&guilds.canAdmin(i);
   const homePayload=options=>renderHomePayload({...options,adminInterface});
@@ -224,7 +225,10 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     return true;
   }
   const visibleTours=(i,{forManagement=false}={})=>tours.list({creatorId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),includeOtherServers:forManagement&&isGlobalTourAdmin(i)});
-  const registrationPayload=(i,options={})=>registrationTypePayload({...options,defaultVisibility:i.guildId&&guilds.canRegister(i).allowed?'public':'private'});
+  const scopePreferenceKey=i=>`${i.user.id}:${guilds.getEsoServer(i.guildId)}`;
+  const rememberedScope=(i,kind)=>{const entry=scopePreferences.get(scopePreferenceKey(i));return entry?.[kind]||null;};
+  const rememberScope=(i,kind,value)=>{if(!value)return;const key=scopePreferenceKey(i),entry=scopePreferences.get(key)||{};entry[kind]=value;scopePreferences.set(key,entry);};
+  const registrationPayload=(i,options={})=>{const allowed=i.guildId&&guilds.canRegister(i).allowed?['public','private','global']:['private'],preferred=rememberedScope(i,'house');return registrationTypePayload({...options,defaultVisibility:preferred&&allowed.includes(preferred)?preferred:allowed.includes('public')?'public':'private'});};
   const personalRow=r=>({...r,scope:'personal',display_name:r.nickname||r.house_name,description:r.notes});
   const guildRow=r=>({...r,scope:'server'});
   const withCount=async r=>({...r,comment_count:await comments.count(r.scope,r.id,r.eso_server)});
@@ -521,6 +525,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     return openCommentReader(i,{kind:'saved',scope,id,backId:backId||'hu:find'},mode);
   }
   async function tourAddHousePayload(i,t,{stateId=null}={}){
+    if(t.automatic_owner)return {content:'Automatic owner tours follow their registered houses and cannot be edited.',embeds:[],components:[]};
     const candidates=await tours.houseCandidates({creatorId:t.creator_id,sourceGuildId:t.source_guild_id||t.guild_id||i.guildId,esoServer:guilds.getEsoServer(i.guildId),visibility:t.visibility}),stops=await tours.getStops(t.id),rows=eligibleTourHouses(candidates,stops);
     const state=stateId?states.get(stateId):null;
     if(!rows.length&&!state?.extra.houseFilters){return {content:'Every eligible house is already on this tour, or no additional houses are available. Register another house to keep building.',embeds:[],components:tourManagePayload(t,stops).components};}
@@ -626,6 +631,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
         if(action==='add') r=await bookmarks.create({userId:i.user.id,originGuildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),houseId:house.house_id,esoOwner:data.owner,nickname:data.nickname,notes:data.description,tags:data.tags});
         else { const raw=(await loadSavedReference(i,id)).record,current=raw?.scope==='private'&&raw.owner_user_id===i.user.id?personalRow(raw):null; if(!current)return respond(i,{content:'Private house not found.',components:[],embeds:[]},mode); r=await bookmarks.update(id,i.user.id,{esoServer:guilds.getEsoServer(i.guildId),houseId:house.house_id,esoOwner:data.owner,nickname:data.nickname,notes:data.description,tags:data.tags}); }
         await recordUsage(i,action==='add'?'registered_house':'updated_house',{kind:'house',id:r.id});
+        if(action==='add')rememberScope(i,'house','private');
         const row=personalRow(r),returnTo=backId||'hu:find'; refreshSearchStateRow(returnTo,row);
         const tourReturn=action==='edit'?await tourReturnPayload(i,returnTo,'House updated.'):null;
         if(tourReturn)return respond(i,tourReturn,mode);
@@ -641,6 +647,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
           r=await regs.create({guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),houseId:house.house_id,esoOwner:data.owner,displayName:data.nickname,description:data.description,tags:data.tags,createdBy:i.user.id,status:permission.status});
         }
         await recordUsage(i,'registered_house',{kind:'house',id:r.id});
+        if(action==='add')rememberScope(i,'house',scope==='global'?'global':'public');
         if(r.status==='pending')return respond(i,{content:`✅ **${destinationLabel(r)}** was submitted and is awaiting Housing Moderator approval. It can be added to tours once approved.`,embeds:[],components:buttonRows([{customId:'hu:home',label:'Back',style:'secondary',emoji:'↩️'}])},mode);
       } else {
         const current=(await loadSavedReference(i,id)).record; if(!current)return respond(i,{content:'Saved house not found.',components:[],embeds:[]},mode);
@@ -741,7 +748,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(scope==='server'&&!i.guildId)return i.update({content:'Server Tours require a Discord server.',embeds:[],components:[]});
     if(scope==='global'&&houseSource!=='global')return i.update({content:'Global Tours can contain Global houses only. Select only Global houses or choose Server/Private visibility.',embeds:[],components:[]});
     const sourceGuildId=['public','both','private_public','public_global','all'].includes(houseSource)?i.guildId:null;
-    const result=await tours.createWithStops({creatorId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),visibility:scope==='personal'?'private':scope==='server'?'public':scope,name:b.name,description:b.description,savedHouseIds:rows.map(r=>r.id)}),t=result.tour; bulkTourStates.delete(id);await recordUsage(i,'created_tour',{kind:'tour',id:t.id});
+    const result=await tours.createWithStops({creatorId:i.user.id,guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),visibility:scope==='personal'?'private':scope==='server'?'public':scope,name:b.name,description:b.description,savedHouseIds:rows.map(r=>r.id)}),t=result.tour; rememberScope(i,'tour',scope); bulkTourStates.delete(id);await recordUsage(i,'created_tour',{kind:'tour',id:t.id});
     const summary=`Created **${t.name}** from **${result.added}** search result${result.added===1?'':'s'}.${result.skipped?` **${result.skipped}** duplicate destination${result.skipped===1?' was':'s were'} already in the result set and skipped.`:''}`;
     return i.update(b.registrationHouseId?await registrationTourSuccess(b,t,summary):{...tourManagePayload(t,await tours.getStops(t.id)),content:summary});
   }
@@ -1655,7 +1662,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
     if(id.startsWith('hu:tour:setvisibilityconfirm:')){ const p=id.split(':'),scope=p[3],tid=Number(p[4]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.update({content:'You cannot manage that tour.',embeds:[],components:[]}); if(scope==='global'&&t.creator_id!==i.user.id&&!globalMods.isGlobalModeratorCached(i.user.id,guilds.getEsoServer(i.guildId)))return i.update({content:'Only the tour creator or a Global Housing Moderator can make a tour Global.',embeds:[],components:[]}); const updated=await tours.update(tid,{scope,...tourUpdateContext(i,t)});if(updated.visibility!==t.visibility)await recordUsage(i,'updated_tour',{kind:'tour',id:tid}); return i.update(canManageTour(i,updated)?tourEditDetailsPayload(updated):{...toursPayload((await visibleTours(i)).length),content:'Visibility updated. This Private tour remains accessible only to its creator.'}); }
     if(id.startsWith('hu:tour:delete:')){ const tid=Number(id.split(':')[3]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.update({content:'You cannot manage that tour.',embeds:[],components:[]}); return i.update(confirmPayload({title:'Delete Housing Tour?',description:`Permanently delete **${t.name}** and all of its tour stops? Saved/public houses are not deleted.`,confirmId:`hu:tour:deleteconfirm:${tid}`,cancelId:`hu:tour:manage:${tid}`})); }
     if(id.startsWith('hu:tour:deleteconfirm:')){ const tid=Number(id.split(':')[3]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.update({content:'You cannot manage that tour.',embeds:[],components:[]}); await tours.remove(tid); return i.update(toursPayload((await visibleTours(i)).length)); }
-    if(id.startsWith('hu:tour:createvis:')){ const p=id.split(':'),scope=p[3],draftId=p[4],d=drafts.get(draftId); if(!d||d.userId!==i.user.id)return i.update({content:'That tour draft expired. Choose Create Tour again.',embeds:[],components:[]}); if(scope==='server'&&!i.guildId)return i.update({content:'Server Tours require a Discord server.',embeds:[],components:[]}); const t=await tours.create({creatorId:i.user.id,guildId:i.guildId,originGuildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),scope,sourceGuildId:i.guildId,name:d.name,description:d.description}); drafts.delete(draftId);await recordUsage(i,'created_tour',{kind:'tour',id:t.id}); return i.update(await tourAddHousePayload(i,t)); }
+    if(id.startsWith('hu:tour:createvis:')){ const p=id.split(':'),scope=p[3],draftId=p[4],d=drafts.get(draftId); if(!d||d.userId!==i.user.id)return i.update({content:'That tour draft expired. Choose Create Tour again.',embeds:[],components:[]}); if(scope==='server'&&!i.guildId)return i.update({content:'Server Tours require a Discord server.',embeds:[],components:[]}); const t=await tours.create({creatorId:i.user.id,guildId:i.guildId,originGuildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),scope,sourceGuildId:i.guildId,name:d.name,description:d.description}); rememberScope(i,'tour',scope); drafts.delete(draftId);await recordUsage(i,'created_tour',{kind:'tour',id:t.id}); return i.update(await tourAddHousePayload(i,t)); }
     if(id.startsWith('hu:reorder:')){ const p=id.split(':'),action=p[2],tid=Number(p[3]),stopId=Number(p[4]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.update({content:'You cannot manage that tour.',embeds:[],components:[]}); let rows=await tours.getStops(tid),stop=rows.find(s=>s.id===stopId); if(!stop)return i.update({content:'That stop no longer exists.',embeds:[],components:[]}); let to=stop.position; if(action==='up')to--; if(action==='down')to++; if(action==='first')to=1;if(action==='last')to=rows.length; if(to!==stop.position){await tours.moveStop(tid,stop.position,to);await recordUsage(i,'updated_tour',{kind:'tour',id:tid});} rows=await tours.getStops(tid); stop=rows.find(s=>s.id===stopId); return i.update(reorderPayload(t,stop,rows.length)); }
     if(id.startsWith('hu:stop:removeconfirm:')){ const p=id.split(':'),tid=Number(p[3]),stopId=Number(p[4]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.update({content:'You cannot manage that tour.',embeds:[],components:[]}); const stop=(await tours.getStops(tid)).find(s=>s.id===stopId); if(stop){await tours.removeStop(tid,stop.position);await recordUsage(i,'updated_tour',{kind:'tour',id:tid});} return i.update(tourManagePayload(t,await tours.getStops(tid))); }
 
@@ -2099,7 +2106,7 @@ export function createHousingMenu(db,{discovery=new HouseDiscoveryService(),admi
       const rows=bulkSelectedRows(b);return modalResponse(i,bulkTourVisibilityPayload(bid,{allowPublic:!!i.guildId&&rows.every(r=>!['personal','private'].includes(r.scope)),allowGlobal:rows.every(r=>r.scope==='global')}));
     }
     if(id==='hu:modal:tour:create'){
-      const did=token(); drafts.set(did,{userId:i.user.id,name:text(i.fields.getTextInputValue('name')),description:text(i.fields.getTextInputValue('description'))||null,created:Date.now()}); return modalResponse(i,tourVisibilityPayload(did));
+      const did=token(); drafts.set(did,{userId:i.user.id,name:text(i.fields.getTextInputValue('name')),description:text(i.fields.getTextInputValue('description'))||null,created:Date.now()}); return modalResponse(i,tourVisibilityPayload(did,rememberedScope(i,'tour')));
     }
     if(id.startsWith('hu:modal:featured:expiry:')){ const parts=id.split(':'),targetKind=parts[4],targetId=Number(parts[5]); if(!isAdmin(i))return i.reply({content:'Only Housing Moderators can manage Featured housing.',flags:MessageFlags.Ephemeral}); const days=Number(text(i.fields.getTextInputValue('days'))); if(!Number.isInteger(days)||days<0||days>3650)return i.reply({content:'Enter a whole number of days from 0 to 3650. Use 0 for no expiration.',flags:MessageFlags.Ephemeral}); const expiresAt=days===0?null:new Date(Date.now()+days*86400000); try{await featured.set({guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId),targetKind,targetId,expiresAt,actorId:i.user.id,isModerator:true,actorGlobalName:i.user.globalName||i.user.username,actorDisplayName:i.member?.displayName});const items=await featured.list({guildId:i.guildId,esoServer:guilds.getEsoServer(i.guildId)});return modalResponse(i,await enrichedFeaturedPayload(i,{items,canManage:true,selectedItem:items.find(item=>item.target_kind===targetKind&&Number(item.target_id)===targetId)||null}));}catch(error){return i.reply({content:error.message,flags:MessageFlags.Ephemeral});} }
     if(id.startsWith('hu:modal:tour:edit:')){ const tid=Number(id.split(':')[4]),t=await tourById(i,tid,{forManagement:true}); if(!t||!canManageTour(i,t))return i.reply({content:'You cannot manage that tour.',flags:MessageFlags.Ephemeral}); const updated=await tours.update(tid,{name:text(i.fields.getTextInputValue('name')),description:text(i.fields.getTextInputValue('description'))||null}); await recordUsage(i,'updated_tour',{kind:'tour',id:tid});return modalResponse(i,tourEditDetailsPayload(updated)); }

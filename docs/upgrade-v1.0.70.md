@@ -1,6 +1,6 @@
 # HearthBound 1.0.70: house screenshot galleries
 
-Each registered house can have up to eight PNG, JPEG or WebP screenshots, up to 5 MB each. The first image is the cover; editors can choose another cover or remove images. Uploads are validated, resized to at most 1920 pixels per side, converted to WebP, and stripped of original metadata. Animated images, SVG, invalid files and images over 40 megapixels are rejected.
+Each registered house can have up to eight PNG, JPEG or WebP screenshots, up to 10 MB each. The first image is the cover; editors can choose another cover or remove images. Uploads are validated, resized to at most 1920 pixels per side, converted to WebP, and stripped of original metadata. Animated images, SVG, invalid files and images over 40 megapixels are rejected.
 
 On the web, open a house and find **House screenshots**. Editors can upload an image and optional caption. Click any image for an enlarged viewer; use Previous/Next or arrow keys, and Escape to close. The upload form supports drag/drop, a preview and progress feedback, preserving the selected file and caption if an upload fails. Captions can be changed without uploading again. Cover images appear in Search Houses, Featured Housing, Random House and the self-paced tour player.
 

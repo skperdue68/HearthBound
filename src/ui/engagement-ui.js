@@ -107,13 +107,15 @@ export function progressRunPayload({ item = null, tour = null, stops = [], curre
     secondary.push(button(`hu:progress:list:${item.id}:${detailState}${suffix}`,'Show Tour List'),button(`hu:progress:restart:${item.id}:${detailState}${suffix}`,'Restart'),button(backId,'Back',ButtonStyle.Secondary,false,'↩️'));
     return {embeds:[tourEmbed(tour,stops,position,commentCount,showDetails,{shared:false,leaderId:item.discord_user_id})],components:[row(primary),row(secondary)]};
   }
-  const stop=item?.stop_position?`Stop **${item.stop_position}**${item.current_house_name?` — **${destinationLabel({house_name:item.current_house_name,display_name:item.current_house_nickname})}**`:''}${item.current_house_owner?`\nOwner: @${String(item.current_house_owner).replace(/^@/,'')}`:''}${item.stop_notes?`\n\n${item.stop_notes}`:''}`:'Complete';
+  const stop=item?.stop_position?`Stop **${item.stop_position}**${item.current_house_name?` — **${destinationLabel({house_name:item.current_house_name,display_name:item.current_house_nickname})}**`:''}${item.current_house_owner?`\nOwner: @${String(item.current_house_owner).replace(/^@/,'')}`:''}`:'Complete';
   const embed = new EmbedBuilder().setColor(0x2b7ddd).setTitle('🧭 Self-Paced Tour').setDescription(discordDescription(item ? `**Tour:** ${item.tour_name || 'Untitled'}\n**Current stop:** ${stop}${complete&&item?.canResume?'\nUnvisited stops are available. Continue to keep your completed stops.':''}\n**Completions:** ${item.completion_count || 0}` : 'That tour progress is no longer available.'));
   if (!item) return { embeds: [embed], components: [row([button(backId, 'Back',ButtonStyle.Secondary,false,'↩️')])] };
+  const embeds=[embed];
+  if(item.stop_notes)embeds.push(new EmbedBuilder().setColor(0xd8b46c).setTitle('📝 Tour note').setDescription(discordDescription(String(item.stop_notes))));
   const actions=complete ? [...(item.canResume?[button(`hu:progress:resume:${item.id}${suffix}`,'Continue',ButtonStyle.Success)]:[]),button(`hu:progress:restart:${item.id}${suffix}`, 'Restart', ButtonStyle.Secondary)] : [button(`hu:progress:back:${item.id}${suffix}`, 'Previous'), button(`hu:progress:next:${item.id}${suffix}`, 'Next', ButtonStyle.Primary), button(`hu:progress:restart:${item.id}${suffix}`, 'Restart')];
   if(!complete && item.current_saved_house_id)actions.push(button(`hu:progress:house:${item.current_saved_house_id}${suffix}`, 'Open House', ButtonStyle.Success));
   actions.push(button(backId, 'Back',ButtonStyle.Secondary,false,'↩️'));
-  return { embeds: [embed], components: [row(actions)] };
+  return { embeds, components: [row(actions)] };
 }
 
 export function progressCompletedPayload({ items = [], page = 1, activePage = 1 } = {}) {

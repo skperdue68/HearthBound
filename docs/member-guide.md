@@ -205,7 +205,7 @@ Tour builders can enter optional tour-specific notes directly on each draft stop
 
 House screenshots: add up to eight images with optional captions. Only the house submitter and administrators authorized to edit that house can upload or manage images; Private houses remain creator-only.
 
-In Discord, the easiest route is **View house → Screenshots → Add screenshot**. During a tour, editors can use **Add screenshot** directly on the current stop. The form names the selected house; choose one PNG, JPEG or WebP file (up to 5 MB), optionally enter a caption, and submit. HearthBound confirms the upload and shows the saved image in a private response. The original tour screen and stop remain unchanged. Screenshots belong to the house gallery, so they also appear on the web and in other tours using that registration. Captions can be edited later from Screenshots.
+In Discord, the easiest route is **View house → Screenshots → Add screenshot**. During a tour, editors can use **Add screenshot** directly on the current stop. The form names the selected house; choose one PNG, JPEG or WebP file (up to 10 MB), optionally enter a caption, and submit. HearthBound confirms the upload and shows the saved image in a private response. The original tour screen and stop remain unchanged. Screenshots belong to the house gallery, so they also appear on the web and in other tours using that registration. Captions can be edited later from Screenshots.
 
 For the slash-command route, `house` and `screenshot` are options on `/hearth`, not subcommands:
 

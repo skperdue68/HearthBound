@@ -81,7 +81,7 @@ Comments belong to an ESO destination in one environment. Matching registrations
 
 ### Use the house gallery
 
-A registration can hold **up to eight still PNG, JPEG or WebP screenshots**, up to **5 MB each**. Editors upload an image with an optional caption, choose a cover, move screenshots earlier or later, edit captions or remove images. With no image, the house stays readable as a text card; no fake screenshot is substituted.
+A registration can hold **up to eight still PNG, JPEG or WebP screenshots**, up to **10 MB each**. Editors upload an image with an optional caption, choose a cover, move screenshots earlier or later, edit captions or remove images. With no image, the house stays readable as a text card; no fake screenshot is substituted.
 
 On the web, find **House screenshots** on the house page. Drag a file onto the upload area or choose one, review the preview and upload. Progress and errors appear in the form. Click an image to enlarge it; use Previous or Next, arrow keys, or Escape to close.
 

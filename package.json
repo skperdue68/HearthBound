@@ -18,9 +18,9 @@
     "node": ">=22"
   },
   "dependencies": {
-    "discord.js": "^14.22.1",
-    "dotenv": "^18.0.9",
-    "mariadb": "^3.4.5",
+    "discord.js": "^14.28.1",
+    "dotenv": "^18.0.10",
+    "mariadb": "^3.5.5",
     "sharp": "^0.35.5"
   }
 }

@@ -2,7 +2,7 @@ import {tourStopDetails} from './tour-stop-details.js';
 import {houseTourLinks} from './house-tour-links.js';
 import {tourSections} from '../utils/tour-list-order.js';
 import {tourStopList} from './tour-stop-list.js';
-import {quickFilters,sortSelect} from './search-controls.js';
+import {filterChips,quickFilters,sortSelect} from './search-controls.js';
 import {readSearchQuery} from './search-params.js';
 import {filterValues} from '../utils/house-search-filters.js';
 import {previewExit} from './permission-preview.js';
@@ -55,7 +55,7 @@ export async function guestBrowsingRoute({request,response,url,workspace,send,re
    const houses=await service.houses(environment),tours=await service.tours(environment);return render('Discover extraordinary homes',`<p>Explore community creations before signing in. Global entries are shared across HearthBound within their ESO platform and region.</p><h2>Homes to explore</h2>${houseCards(houses.rows.slice(0,6))}<div class="actions">${linkButton('Browse all Global houses',href('/browse/houses',environment))}</div><h2>Housing tours</h2>${tourCards(tours.rows.slice(0,6))}<div class="actions">${linkButton('Browse all Global tours',href('/browse/tours',environment))}</div>`,href('/app',environment));
   }
   if(['/browse/houses','/browse/tours'].includes(url.pathname)){
-   const houses=url.pathname.endsWith('houses'),result=houses?await service.houses(environment,query):await service.tours(environment,query),form=`<form class="filters" method="get" data-search-controls><input type="hidden" name="esoServer" value="${environment}">${input(houses?'House, ESO owner or zone':'Tour name','q',query.q||'')}${houses?sortSelect(query):''}<button>Search</button>${houses?quickFilters(await workspace.houseFilterChoices({esoServer:environment},{globalOnly:true}),query):''}</form>`;
+   const houses=url.pathname.endsWith('houses'),result=houses?await service.houses(environment,query):await service.tours(environment,query),filterChoices=houses?await workspace.houseFilterChoices({esoServer:environment},{globalOnly:true}):{},form=`<form class="filters" method="get" data-search-controls><input type="hidden" name="esoServer" value="${environment}">${houses?filterChips(filterChoices,query):''}${input(houses?'House, ESO owner or zone':'Tour name','q',query.q||'')}${houses?sortSelect(query):''}<button>Search</button>${houses?quickFilters(filterChoices,query):''}</form>`;
    return render(houses?'Global houses':'Global housing tours',`${form}<p class="note">${result.total} matching ${houses?'houses':'tours'}</p>${houses?houseCards(result.rows):tourCards(result.rows)}${pagination({page:result.page,total:result.total,path:url.pathname,params:{esoServer:environment,q:query.q||'',...(houses?{tag:query.tag||'',sort:query.sort||'az',zone:query.zone||'',style:query.style||'',classification:query.classification||''}:{})}})}`,href(houses?'/app/houses':'/app/tours',environment,{q:query.q||''}));
   }
   return send(response,404,publicPage('Page unavailable','<h1>Page unavailable</h1><a href="/browse">Explore Global houses and tours</a>'));

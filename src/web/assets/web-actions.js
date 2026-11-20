@@ -68,6 +68,17 @@ document.querySelectorAll('[data-search-controls] select').forEach(select=>selec
 // Multi-value filters apply on each checkbox change and via the chip remove button.
 document.querySelectorAll('[data-search-controls] input[type="checkbox"]').forEach(box=>box.addEventListener('change',()=>box.form?.requestSubmit()));
 document.querySelectorAll('[data-remove-filter]').forEach(button=>button.addEventListener('click',()=>{const form=button.closest('form'),box=form?document.getElementById(button.dataset.removeFilter):null;if(!box||box.form!==form)return;box.checked=false;form.requestSubmit();}));
+// A filter dropdown closes when the pointer goes elsewhere or Escape is pressed.
+const filterDropdowns=[...document.querySelectorAll('details.filter-dropdown')];
+if(filterDropdowns.length){
+ document.addEventListener('click',event=>{filterDropdowns.forEach(dropdown=>{if(!dropdown.contains(event.target))dropdown.open=false;});});
+ document.addEventListener('keydown',event=>{
+  if(event.key!=='Escape')return;
+  const dropdown=filterDropdowns.find(item=>item.open);
+  if(!dropdown)return;
+  dropdown.open=false;dropdown.querySelector('summary')?.focus();event.preventDefault();
+ });
+}
 
 // Select-only preferences apply on change; their native GET/POST forms remain usable without JavaScript.
 document.querySelectorAll('form[data-auto-submit] select').forEach(select=>select.addEventListener('change',()=>select.form.requestSubmit()));

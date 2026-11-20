@@ -152,10 +152,11 @@ a.pill,a.pill:hover,a.pill:focus-visible{text-decoration:none}a.pill:hover{filte
 .filter-dropdown[open]>summary{border-color:var(--hb-focus);border-bottom-left-radius:0;border-bottom-right-radius:0}
 .filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:auto;border-radius:999px;background:var(--hb-gold);color:#172238;font-size:11px;font-weight:700}
 .filter-options{position:absolute;z-index:40;left:0;right:0;top:calc(100% - 1px);max-height:280px;overflow:auto;padding:8px;border:1px solid #47617f;border-radius:0 0 8px 8px;background:#111f35;box-shadow:0 14px 30px #0006}
-.filter-option{display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:6px;font-size:12px;font-weight:500;color:var(--hb-text);cursor:pointer}
+.filter-option{display:flex;align-items:center;gap:8px;min-width:0;margin:0;padding:7px 6px;border-radius:6px;font-size:12px;font-weight:500;color:var(--hb-text);cursor:pointer}
 .filter-option:hover{background:#1b2f4a}
-.filter-option input{margin:0;accent-color:var(--hb-gold)}
-.filter-option span{overflow-wrap:anywhere}
+/* The surrounding .filters input width rules must not stretch these checkboxes. */
+.filter-option input[type="checkbox"]{flex:0 0 auto;width:auto;min-width:0;height:auto;margin:0;accent-color:var(--hb-gold)}
+.filter-option span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 .filter-chips{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:30px}
 .filter-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 10px;border:1px solid #53698d;border-radius:999px;background:#263953;color:#eef3fb;font-size:12px}
 .filter-chip-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hb-muted)}
